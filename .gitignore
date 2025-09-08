@@ -7,3 +7,4 @@ __pycache__/
 /experiments/*/data/
 /misc/.tox/
 /misc/autodoc/downward-xmlrpc.secret
+/src/search/ext/wlplan

@@ -45,8 +45,14 @@ report_bitwidth()
 set_up_build_types("Debug;Release")
 set_up_options()
 
+# Add wlplan
+list(APPEND CMAKE_PREFIX_PATH "ext/wlplan")
+find_package(wlplan REQUIRED)
+
 project(downward LANGUAGES CXX)
 add_executable(downward planner.cc)
+
+target_link_libraries(downward PRIVATE wlplan)
 
 # obtain git SHA1 hash
 execute_process(
@@ -1126,4 +1132,60 @@ create_fast_downward_library(
     SOURCES
         algorithms/partial_state_tree
     DEPENDENCY_ONLY
+)
+
+##############################################################################
+# GOOSE Content
+##############################################################################
+create_fast_downward_library(
+    NAME wl_utils
+    HELP "WL Utility functions"
+    SOURCES
+        goose/wl_utils
+    DEPENDENCY_ONLY
+)
+
+create_fast_downward_library(
+    NAME wlgoose_heuristic
+    HELP "The WL-GOOSE heuristic"
+    SOURCES
+        goose/wlgoose_heuristic
+    DEPENDS
+        wl_utils
+)
+
+create_fast_downward_library(
+    NAME qb_heuristic
+    HELP "Quantified-Both heuristic"
+    SOURCES
+        goose/qb_heuristic
+    DEPENDENCY_ONLY
+)
+
+create_fast_downward_library(
+    NAME qb_wl_heuristic
+    HELP "Quantified-Both heuristic with WL features"
+    SOURCES
+        goose/qb_wl_heuristic
+    DEPENDS
+        qb_heuristic
+        wl_utils
+)
+
+create_fast_downward_library(
+    NAME qb_pn_heuristic
+    HELP "Quantified-Both heuristic with atom features"
+    SOURCES
+        goose/qb_pn_heuristic
+    DEPENDS
+        qb_heuristic
+)
+
+create_fast_downward_library(
+    NAME qb_pnwl_heuristic
+    HELP "Quantified-Both heuristic with atom and WL features"
+    SOURCES
+        goose/qb_pnwl_heuristic
+    DEPENDS
+        qb_heuristic
 )

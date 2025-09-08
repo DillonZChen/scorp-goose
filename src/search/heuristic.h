@@ -60,8 +60,8 @@ protected:
     TaskProxy task_proxy;
 
     enum {
-        DEAD_END = -1,
-        NO_VALUE = -2
+        DEAD_END = -2147483648,
+        NO_VALUE = -2147483647
     };
 
     virtual int compute_heuristic(const State &ancestor_state) = 0;

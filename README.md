@@ -1,3 +1,14 @@
+Scorpion extension for [Goose](https://github.com/DillonZChen/goose). 
+
+View the diff between this fork and Scorpion at https://github.com/DillonZChen/scorp-goose/compare/scorpion...jendrikseipp:scorpion:scorpion
+
+Summary of differences:
+- Most source code changes and additions are located in `src/search/goose` and `src/search/CMakeLists.txt`
+- The constant values for `DEAD_END` and `NO_VALUE` are changed as goose heuristics can be negative.
+
+---
+---
+
 # Scorpion
 
 Scorpion is a classical planning system that extends [Fast
