@@ -1,6 +1,6 @@
 Scorpion extension for [Goose](https://github.com/DillonZChen/goose). 
 
-View the diff between this fork and Scorpion at https://github.com/DillonZChen/scorp-goose/compare/scorpion...jendrikseipp:scorpion:scorpion
+View the diff between this fork and Scorpion at https://github.com/jendrikseipp/scorpion/compare/scorpion...DillonZChen:scorp-goose:scorp-goose
 
 Summary of differences:
 - Most source code changes and additions are located in `src/search/goose` and `src/search/CMakeLists.txt`
