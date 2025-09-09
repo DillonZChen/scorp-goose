@@ -1154,6 +1154,7 @@ create_fast_downward_library(
         wl_utils
 )
 
+# Quantified Both
 create_fast_downward_library(
     NAME qb_heuristic
     HELP "Quantified-Both heuristic"
@@ -1188,4 +1189,44 @@ create_fast_downward_library(
         goose/qb_atwl_heuristic
     DEPENDS
         qb_heuristic
+)
+
+# Partition Novelty
+create_fast_downward_library(
+    NAME pn_table
+    HELP "Partition Novelty Table"
+    SOURCES
+        goose/pn_table
+    DEPENDS
+        novelty
+)
+
+create_fast_downward_library(
+    NAME pn_at_heuristic
+    HELP "Partition Novelty heuristic with atom features"
+    SOURCES
+        goose/pn_at_heuristic
+    DEPENDS
+        pn_table
+        task_properties
+)
+
+create_fast_downward_library(
+    NAME pn_wl_heuristic
+    HELP "Partition Novelty heuristic with WL features"
+    SOURCES
+        goose/pn_wl_heuristic
+    DEPENDS
+        pn_table
+        task_properties
+)
+
+create_fast_downward_library(
+    NAME pn_atwl_heuristic
+    HELP "Partition Novelty heuristic with atom and WL features"
+    SOURCES
+        goose/pn_atwl_heuristic
+    DEPENDS
+        pn_table
+        task_properties
 )

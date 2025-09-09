@@ -1,11 +1,13 @@
 #ifndef GOOSE_WL_UTILS_H
 #define GOOSE_WL_UTILS_H
 
+#include "../task_proxy.h"
+
+#include "../ext/wlplan/include/feature_generator/features.hpp"
 #include "../ext/wlplan/include/planning/atom.hpp"
 #include "../ext/wlplan/include/planning/predicate.hpp"
 #include "../ext/wlplan/include/planning/problem.hpp"
 #include "../ext/wlplan/include/planning/state.hpp"
-#include "../task_proxy.h"
 
 #include <map>
 #include <memory>
@@ -14,22 +16,46 @@
 #include <vector>
 
 namespace wl_utils {
-  using PredArgsString = std::pair<std::string, std::vector<std::string>>;
-  using DownwardToWlplanAtomMapper = std::map<FactPair, std::shared_ptr<planning::Atom>>;
 
-  PredArgsString fd_fact_to_pred_args(std::string &name);
-  std::map<FactPair, std::pair<std::string, bool>> get_pddl_facts(FactsProxy facts);
+using WLFeature = std::pair<int, int>;
+using PredArgsString = std::pair<std::string, std::vector<std::string>>;
+using DownwardToWlplanAtomMapper =
+    std::map<FactPair, std::shared_ptr<planning::Atom>>;
 
-  std::map<FactPair, PredArgsString>
-  get_fd_fact_to_pred_args_map(const std::shared_ptr<AbstractTask> task);
+class WLFeatureGenerator {
+protected:
+    std::shared_ptr<feature_generator::Features> model;
+    DownwardToWlplanAtomMapper mapper;
 
-  std::pair<DownwardToWlplanAtomMapper, planning::Problem>
-  construct_wlplan_problem(const planning::Domain &domain,
-                           const std::map<FactPair, PredArgsString> &mapper,
-                           const TaskProxy &task_proxy);
+public:
+    WLFeatureGenerator(
+        const std::shared_ptr<AbstractTask> task, const TaskProxy &task_proxy,
+        int wl_iterations, const std::string &graph_representation,
+        const std::string &wl_algorithm);
 
-  planning::State to_wlplan_state(const State &state, const DownwardToWlplanAtomMapper &mapper);
+    planning::State to_wlplan_state(const State &state);
+};
 
-}  // namespace wl_utils
+PredArgsString fd_fact_to_pred_args(std::string &name);
+std::map<FactPair, std::pair<std::string, bool>> get_pddl_facts(
+    FactsProxy facts);
 
-#endif  // GOOSE_WL_UTILS_H
+std::map<FactPair, PredArgsString> get_fd_fact_to_pred_args_map(
+    const std::shared_ptr<AbstractTask> task);
+
+std::pair<DownwardToWlplanAtomMapper, planning::Problem>
+construct_wlplan_problem(
+    const planning::Domain &domain,
+    const std::map<FactPair, PredArgsString> &mapper,
+    const TaskProxy &task_proxy);
+
+planning::State to_wlplan_state(
+    const State &state, const DownwardToWlplanAtomMapper &mapper);
+
+planning::State to_wlplan_state(
+    const State &state,
+    const std::shared_ptr<DownwardToWlplanAtomMapper> &mapper);
+
+} // namespace wl_utils
+
+#endif // GOOSE_WL_UTILS_H
