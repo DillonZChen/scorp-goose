@@ -9,7 +9,7 @@
 #include <memory>
 
 namespace qb_heuristic {
-  class QbPnWlHeuristic : public QbHeuristic {
+  class QbAtWlHeuristic : public QbHeuristic {
    protected:
     std::shared_ptr<feature_generator::Features> model;
     wl_utils::DownwardToWlplanAtomMapper fd_fact_to_wlplan_atom;
@@ -17,7 +17,7 @@ namespace qb_heuristic {
     virtual int compute_heuristic(const State &ancestor_state) override;
 
    public:
-    explicit QbPnWlHeuristic(const std::shared_ptr<AbstractTask> &transform,
+    explicit QbAtWlHeuristic(const std::shared_ptr<AbstractTask> &transform,
                              bool cache_estimates,
                              const std::string &description,
                              utils::Verbosity verbosity,

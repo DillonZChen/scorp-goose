@@ -1,4 +1,4 @@
-#include "qb_pnwl_heuristic.h"
+#include "qb_atwl_heuristic.h"
 
 #include "../ext/wlplan/include/feature_generator/feature_generators/iwl.hpp"
 #include "../ext/wlplan/include/feature_generator/feature_generators/lwl2.hpp"
@@ -13,7 +13,7 @@
 using namespace std;
 
 namespace qb_heuristic {
-  QbPnWlHeuristic::QbPnWlHeuristic(const std::shared_ptr<AbstractTask> &transform,
+  QbAtWlHeuristic::QbAtWlHeuristic(const std::shared_ptr<AbstractTask> &transform,
                                    bool cache_estimates,
                                    const std::string &description,
                                    utils::Verbosity verbosity,
@@ -70,7 +70,7 @@ namespace qb_heuristic {
     std::cout << "PNWL Novelty Heuristic initialised!" << std::endl;
   }
 
-  int QbPnWlHeuristic::compute_heuristic(const State &ancestor_state) {
+  int QbAtWlHeuristic::compute_heuristic(const State &ancestor_state) {
     EvaluationContext eval_context(ancestor_state, 0, false, &statistics);
     int h = eval_context.get_evaluator_value_or_infinity(base_heuristic.get());
     if (h == EvaluationResult::INFTY)
@@ -112,16 +112,16 @@ namespace qb_heuristic {
     return nov_h < 0 ? nov_h : non_h;
   }
 
-  class QbPnWlHeuristicFeature : public plugins::TypedFeature<Evaluator, QbPnWlHeuristic> {
+  class QbAtWlHeuristicFeature : public plugins::TypedFeature<Evaluator, QbAtWlHeuristic> {
    public:
-    QbPnWlHeuristicFeature() : TypedFeature("qbpnwl") {
+    QbAtWlHeuristicFeature() : TypedFeature("qbatwl") {
       document_title("Goal count heuristic");
 
       add_option<shared_ptr<Evaluator>>("eval", "Heuristic for novelty calculation");
       add_option<int>("l", "Number of wl iterations", "2");
       add_option<std::string>("g", "Graph representation", "ilg");
       add_option<std::string>("w", "WL algorithm", "wl");
-      add_heuristic_options_to_feature(*this, "qbpnwl");
+      add_heuristic_options_to_feature(*this, "qbatwl");
 
       document_language_support("action costs", "ignored by design");
       document_language_support("conditional effects", "supported");
@@ -133,8 +133,8 @@ namespace qb_heuristic {
       document_property("preferred operators", "no");
     }
 
-    virtual shared_ptr<QbPnWlHeuristic> create_component(const plugins::Options &opts) const override {
-      return std::make_shared<QbPnWlHeuristic>(opts.get<shared_ptr<AbstractTask>>("transform"),
+    virtual shared_ptr<QbAtWlHeuristic> create_component(const plugins::Options &opts) const override {
+      return std::make_shared<QbAtWlHeuristic>(opts.get<shared_ptr<AbstractTask>>("transform"),
                                                opts.get<bool>("cache_estimates"),
                                                opts.get<std::string>("description"),
                                                opts.get<utils::Verbosity>("verbosity"),
@@ -145,5 +145,5 @@ namespace qb_heuristic {
     }
   };
 
-  static plugins::FeaturePlugin<QbPnWlHeuristicFeature> _plugin;
+  static plugins::FeaturePlugin<QbAtWlHeuristicFeature> _plugin;
 }  // namespace qb_heuristic

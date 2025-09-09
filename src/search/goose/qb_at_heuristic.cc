@@ -1,4 +1,4 @@
-#include "qb_pn_heuristic.h"
+#include "qb_at_heuristic.h"
 
 #include "../heuristics/additive_heuristic.h"
 #include "../heuristics/ff_heuristic.h"
@@ -10,7 +10,7 @@
 using namespace std;
 
 namespace qb_heuristic {
-QbPnHeuristic::QbPnHeuristic(
+QbAtHeuristic::QbAtHeuristic(
     const std::shared_ptr<AbstractTask> &transform, bool cache_estimates,
     const std::string &description, utils::Verbosity verbosity,
     const std::shared_ptr<Evaluator> base_heuristic)
@@ -18,7 +18,7 @@ QbPnHeuristic::QbPnHeuristic(
           transform, cache_estimates, description, verbosity, base_heuristic) {
 }
 
-int QbPnHeuristic::compute_heuristic(const State &ancestor_state) {
+int QbAtHeuristic::compute_heuristic(const State &ancestor_state) {
     EvaluationContext eval_context(ancestor_state, 0, false, &statistics);
     int h = eval_context.get_evaluator_value_or_infinity(base_heuristic.get());
     if (h == EvaluationResult::INFTY)
@@ -42,15 +42,15 @@ int QbPnHeuristic::compute_heuristic(const State &ancestor_state) {
     return nov_h < 0 ? nov_h : non_h;
 }
 
-class QbPnHeuristicFeature
-    : public plugins::TypedFeature<Evaluator, QbPnHeuristic> {
+class QbAtHeuristicFeature
+    : public plugins::TypedFeature<Evaluator, QbAtHeuristic> {
 public:
-    QbPnHeuristicFeature() : TypedFeature("qbpn") {
+    QbAtHeuristicFeature() : TypedFeature("qbat") {
         document_title("Goal count heuristic");
 
         add_option<shared_ptr<Evaluator>>(
             "eval", "Heuristic for novelty calculation");
-        add_heuristic_options_to_feature(*this, "qbpn");
+        add_heuristic_options_to_feature(*this, "qbat");
 
         document_language_support("action costs", "ignored by design");
         document_language_support("conditional effects", "supported");
@@ -62,9 +62,9 @@ public:
         document_property("preferred operators", "no");
     }
 
-    virtual shared_ptr<QbPnHeuristic> create_component(
+    virtual shared_ptr<QbAtHeuristic> create_component(
         const plugins::Options &opts) const override {
-        return std::make_shared<QbPnHeuristic>(
+        return std::make_shared<QbAtHeuristic>(
             opts.get<shared_ptr<AbstractTask>>("transform"),
             opts.get<bool>("cache_estimates"),
             opts.get<std::string>("description"),
@@ -73,5 +73,5 @@ public:
     }
 };
 
-static plugins::FeaturePlugin<QbPnHeuristicFeature> _plugin;
+static plugins::FeaturePlugin<QbAtHeuristicFeature> _plugin;
 } // namespace qb_heuristic

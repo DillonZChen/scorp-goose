@@ -1173,19 +1173,19 @@ create_fast_downward_library(
 )
 
 create_fast_downward_library(
-    NAME qb_pn_heuristic
+    NAME qb_at_heuristic
     HELP "Quantified-Both heuristic with atom features"
     SOURCES
-        goose/qb_pn_heuristic
+        goose/qb_at_heuristic
     DEPENDS
         qb_heuristic
 )
 
 create_fast_downward_library(
-    NAME qb_pnwl_heuristic
+    NAME qb_atwl_heuristic
     HELP "Quantified-Both heuristic with atom and WL features"
     SOURCES
-        goose/qb_pnwl_heuristic
+        goose/qb_atwl_heuristic
     DEPENDS
         qb_heuristic
 )
