@@ -1,8 +1,5 @@
 #include "qb_wl_heuristic.h"
 
-#include "../ext/wlplan/include/feature_generator/feature_generators/iwl.hpp"
-#include "../ext/wlplan/include/feature_generator/feature_generators/lwl2.hpp"
-#include "../ext/wlplan/include/feature_generator/feature_generators/wl.hpp"
 #include "../heuristics/additive_heuristic.h"
 #include "../heuristics/ff_heuristic.h"
 #include "../heuristics/goal_count_heuristic.h"
@@ -20,24 +17,8 @@ QbWlHeuristic::QbWlHeuristic(
     const std::string &graph_representation, const std::string &wl_algorithm)
     : QbHeuristic(
           transform, cache_estimates, description, verbosity, base_heuristic) {
-    // Construct domain
-    std::cout << "Initialising domain..." << std::endl;
-    planning::Domain domain = wl_utils::construct_wlplan_domain(task);
-
-    // Construct problem
-    std::cout << "Initialising problem..." << std::endl;
-    const std::map<FactPair, wl_utils::PredArgsString> &mapper =
-        wl_utils::get_fd_fact_to_pred_args_map(task);
-    auto [fd_fact_map, problem] =
-        wl_utils::construct_wlplan_problem(domain, mapper, task_proxy);
-    fd_fact_to_wlplan_atom = fd_fact_map;
-
-    // Set up WLF generator
-    std::cout << "Initialising WLF generator..." << std::endl;
-    model = wl_utils::init_wlf_generator(
-        domain, problem, graph_representation, wl_iterations, wl_algorithm);
-
-    std::cout << "WL Novelty Heuristic initialised!" << std::endl;
+    wlf_generator = std::make_shared<wl_utils::WLFeatureGenerator>(
+        task, task_proxy, wl_iterations, graph_representation, wl_algorithm);
 }
 
 int QbWlHeuristic::compute_heuristic(const State &ancestor_state) {
@@ -50,10 +31,8 @@ int QbWlHeuristic::compute_heuristic(const State &ancestor_state) {
     int non_h = 0;
 
     State state = convert_ancestor_state(ancestor_state);
-    planning::State wl_state =
-        wl_utils::to_wlplan_state(state, fd_fact_to_wlplan_atom);
-
-    std::unordered_map<int, int> features = model->collect_embed(wl_state);
+    
+    std::unordered_map<int, int> features = wlf_generator->collect_embed(ancestor_state);
     for (const std::pair<const int, int> &feat : features) {
         if (feat.second ==
             0) { // feature not present, their values do not matter

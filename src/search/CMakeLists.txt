@@ -1191,42 +1191,42 @@ create_fast_downward_library(
         qb_heuristic
 )
 
-# Partition Novelty
-create_fast_downward_library(
-    NAME pn_table
-    HELP "Partition Novelty Table"
-    SOURCES
-        goose/pn_table
-    DEPENDS
-        novelty
-)
+# # Partition Novelty
+# create_fast_downward_library(
+#     NAME pn_table
+#     HELP "Partition Novelty Table"
+#     SOURCES
+#         goose/pn_table
+#     DEPENDS
+#         novelty
+# )
 
-create_fast_downward_library(
-    NAME pn_at_heuristic
-    HELP "Partition Novelty heuristic with atom features"
-    SOURCES
-        goose/pn_at_heuristic
-    DEPENDS
-        pn_table
-        task_properties
-)
+# create_fast_downward_library(
+#     NAME pn_at_heuristic
+#     HELP "Partition Novelty heuristic with atom features"
+#     SOURCES
+#         goose/pn_at_heuristic
+#     DEPENDS
+#         pn_table
+#         task_properties
+# )
 
-create_fast_downward_library(
-    NAME pn_wl_heuristic
-    HELP "Partition Novelty heuristic with WL features"
-    SOURCES
-        goose/pn_wl_heuristic
-    DEPENDS
-        pn_table
-        task_properties
-)
+# create_fast_downward_library(
+#     NAME pn_wl_heuristic
+#     HELP "Partition Novelty heuristic with WL features"
+#     SOURCES
+#         goose/pn_wl_heuristic
+#     DEPENDS
+#         pn_table
+#         task_properties
+# )
 
-create_fast_downward_library(
-    NAME pn_atwl_heuristic
-    HELP "Partition Novelty heuristic with atom and WL features"
-    SOURCES
-        goose/pn_atwl_heuristic
-    DEPENDS
-        pn_table
-        task_properties
-)
+# create_fast_downward_library(
+#     NAME pn_atwl_heuristic
+#     HELP "Partition Novelty heuristic with atom and WL features"
+#     SOURCES
+#         goose/pn_atwl_heuristic
+#     DEPENDS
+#         pn_table
+#         task_properties
+# )

@@ -33,7 +33,15 @@ public:
         int wl_iterations, const std::string &graph_representation,
         const std::string &wl_algorithm);
 
-    planning::State to_wlplan_state(const State &state);
+    WLFeatureGenerator(
+        const std::shared_ptr<AbstractTask> task, const TaskProxy &task_proxy,
+        const std::string &model_file);
+
+    planning::State to_wlplan_state(const State &state) const;
+
+    std::unordered_map<int, int> collect_embed(const State &state);
+
+    double predict(const State &state) const;
 };
 
 PredArgsString fd_fact_to_pred_args(std::string &name);
@@ -48,13 +56,6 @@ construct_wlplan_problem(
     const planning::Domain &domain,
     const std::map<FactPair, PredArgsString> &mapper,
     const TaskProxy &task_proxy);
-
-planning::State to_wlplan_state(
-    const State &state, const DownwardToWlplanAtomMapper &mapper);
-
-planning::State to_wlplan_state(
-    const State &state,
-    const std::shared_ptr<DownwardToWlplanAtomMapper> &mapper);
 
 } // namespace wl_utils
 

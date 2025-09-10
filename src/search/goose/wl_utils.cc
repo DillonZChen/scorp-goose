@@ -1,5 +1,6 @@
 #include "wl_utils.hpp"
 
+#include "../ext/wlplan/include/feature_generator/feature_generator_loader.hpp"
 #include "../ext/wlplan/include/feature_generator/feature_generators/iwl.hpp"
 #include "../ext/wlplan/include/feature_generator/feature_generators/lwl2.hpp"
 #include "../ext/wlplan/include/feature_generator/feature_generators/wl.hpp"
@@ -164,17 +165,6 @@ construct_wlplan_problem(
     return {fd_fact_to_wlplan_atom, problem};
 }
 
-planning::State to_wlplan_state(
-    const State &state, const DownwardToWlplanAtomMapper &mapper) {
-    std::vector<std::shared_ptr<planning::Atom>> atoms;
-    for (const FactProxy &fact : state) {
-        if (mapper.count(fact.get_pair())) {
-            atoms.push_back(mapper.at(fact.get_pair()));
-        }
-    }
-    return planning::State(atoms);
-}
-
 /* WLFeature Generator */
 
 WLFeatureGenerator::WLFeatureGenerator(
@@ -197,10 +187,11 @@ WLFeatureGenerator::WLFeatureGenerator(
     planning::Domain domain = planning::Domain("domain", predicates);
 
     /* Construct problem */
-    auto [mapper, problem] = construct_wlplan_problem(domain, helper, task_proxy);
+    auto [mapper_loc, problem] =
+        construct_wlplan_problem(domain, helper, task_proxy);
+    mapper = mapper_loc;
 
     /* Initialise feature generator */
-    std::shared_ptr<feature_generator::Features> model;
     if (wl_algorithm == "wl") {
         model = std::make_shared<feature_generator::WLFeatures>(
             domain, graph_representation, wl_iterations, "none", true);
@@ -219,7 +210,26 @@ WLFeatureGenerator::WLFeatureGenerator(
     model->be_quiet();
 }
 
-planning::State WLFeatureGenerator::to_wlplan_state(const State &state) {
+WLFeatureGenerator::WLFeatureGenerator(
+    const std::shared_ptr<AbstractTask> task, const TaskProxy &task_proxy,
+    const std::string &model_file) {
+    model = load_feature_generator(model_file);
+
+    /* Get domain from model */
+    const planning::Domain domain = *(model->get_domain());
+    const std::map<FactPair, wl_utils::PredArgsString> &helper =
+        wl_utils::get_fd_fact_to_pred_args_map(task);
+
+    /* Construct problem */
+    auto [mapper_loc, problem] =
+        construct_wlplan_problem(domain, helper, task_proxy);
+    mapper = mapper_loc;
+
+    model->set_problem(problem);
+    model->be_quiet();
+}
+
+planning::State WLFeatureGenerator::to_wlplan_state(const State &state) const {
     std::vector<std::shared_ptr<planning::Atom>> atoms;
     for (const FactProxy &fact : state) {
         if (mapper.count(fact.get_pair())) {
@@ -227,6 +237,19 @@ planning::State WLFeatureGenerator::to_wlplan_state(const State &state) {
         }
     }
     return planning::State(atoms);
+}
+
+std::unordered_map<int, int> WLFeatureGenerator::collect_embed(
+    const State &state) {
+    planning::State wl_state = to_wlplan_state(state);
+    std::unordered_map<int, int> features = model->collect_embed(wl_state);
+    return features;
+}
+
+double WLFeatureGenerator::predict(const State &state) const {
+    planning::State wl_state = to_wlplan_state(state);
+    double h = model->predict(wl_state);
+    return h;
 }
 
 } // namespace wl_utils
