@@ -1,14 +1,16 @@
-#ifndef GOOSE_QB_PNWL_HEURISTIC_H
-#define GOOSE_QB_PNWL_HEURISTIC_H
+#ifndef GOOSE_QB_ATWL_HEURISTIC_H
+#define GOOSE_QB_ATWL_HEURISTIC_H
 
 #include "qb_heuristic.h"
-#include "wl_utils.hpp"
+
+#include "../features/wlf_generator.h"
 
 #include <memory>
 
 namespace qb_heuristic {
 class QbAtWlHeuristic : public QbHeuristic {
 protected:
+    std::shared_ptr<features::WLFeatureGenerator> wlf_generator;
     virtual int compute_heuristic(const State &ancestor_state) override;
 
 public:

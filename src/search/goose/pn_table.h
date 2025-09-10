@@ -1,11 +1,10 @@
 #ifndef GOOSE_PN_TABLE_H
 #define GOOSE_PN_TABLE_H
 
-#include "wl_utils.hpp"
-
 #include "../task_proxy.h"
 
 #include "../algorithms/array_pool.h"
+#include "../features/wlf_generator.h"
 #include "../novelty/novelty_table.h"
 
 #include <cassert>
@@ -20,19 +19,19 @@ class NoveltyTable {
     const novelty::TaskInfo &task_info;
     std::vector<bool> seen_facts;
     std::vector<bool> seen_fact_pairs;
-    std::set<wl_utils::WLFeature> seen_wl_features;
+    std::set<features::WLFeature> seen_wl_features;
+    std::set<std::pair<features::WLFeature, features::WLFeature>>
+        seen_wl_feature_pairs;
 
     bool at;
     bool wl;
 
-    const std::shared_ptr<wl_utils::DownwardToWlplanAtomMapper>
-        fd_fact_to_wlplan_atom;
+    const std::shared_ptr<features::WLFeatureGenerator> wlf_generator;
 
 public:
     NoveltyTable(
         int width, const novelty::TaskInfo &task_info, bool at, bool wl,
-        const std::shared_ptr<wl_utils::DownwardToWlplanAtomMapper>
-            &fd_fact_to_wlplan_atom);
+        const std::shared_ptr<features::WLFeatureGenerator> &wlf_generator);
 
     static const int UNKNOWN_NOVELTY = 3;
 

@@ -13,13 +13,12 @@ static inline FactPair get_fact(const State &state, int var) {
 
 NoveltyTable::NoveltyTable(
     int width, const novelty::TaskInfo &task_info, bool at, bool wl,
-    const std::shared_ptr<wl_utils::DownwardToWlplanAtomMapper>
-        &fd_fact_to_wlplan_atom)
+    const std::shared_ptr<features::WLFeatureGenerator> &wlf_generator)
     : width(width),
       task_info(task_info),
       at(at),
       wl(wl),
-      fd_fact_to_wlplan_atom(fd_fact_to_wlplan_atom) {
+      wlf_generator(wlf_generator) {
     reset();
 }
 
@@ -61,8 +60,35 @@ int NoveltyTable::compute_novelty_and_update_table(const State &state) {
 
     /* WL features */
     if (wl) {
-        planning::State wl_state =
-            wl_utils::to_wlplan_state(state, fd_fact_to_wlplan_atom);
+        std::unordered_map<int, int> features_map =
+            wlf_generator->compute_features(state);
+        std::set<features::WLFeature> features(
+            features_map.begin(), features_map.end());
+
+        // Check for novelty 1.
+        for (const features::WLFeature &feat : features) {
+            if (!seen_wl_features.count(feat)) {
+                seen_wl_features.insert(feat);
+                min_novelty = 1;
+            }
+        }
+
+        // Check for novelty 2.
+        if (width == 2) {
+            for (const features::WLFeature &f1 : features) {
+                for (const features::WLFeature &f2 : features) {
+                    if (f1 >= f2) {
+                        continue;
+                    }
+                    std::pair<features::WLFeature, features::WLFeature>
+                        feature_pair = {f1, f2};
+                    if (!seen_wl_feature_pairs.count(feature_pair)) {
+                        seen_wl_feature_pairs.insert(feature_pair);
+                        min_novelty = 2;
+                    }
+                }
+            }
+        }
     }
 
     return min_novelty;

@@ -1,5 +1,7 @@
-#ifndef GOOSE_WL_UTILS_H
-#define GOOSE_WL_UTILS_H
+#ifndef FEATURES_WLF_GENERATOR_H
+#define FEATURES_WLF_GENERATOR_H
+
+#include "feature_generator.h"
 
 #include "../task_proxy.h"
 
@@ -15,14 +17,15 @@
 #include <utility>
 #include <vector>
 
-namespace wl_utils {
+namespace features {
 
-using WLFeature = std::pair<int, int>;
-using PredArgsString = std::pair<std::string, std::vector<std::string>>;
+using WLFeature = typename std::pair<int, int>;
+using PredArgsString =
+    typename std::pair<std::string, std::vector<std::string>>;
 using DownwardToWlplanAtomMapper =
-    std::map<FactPair, std::shared_ptr<planning::Atom>>;
+    typename std::map<FactPair, std::shared_ptr<planning::Atom>>;
 
-class WLFeatureGenerator {
+class WLFeatureGenerator : public FeatureGenerator<std::unordered_map<int, int>> {
 protected:
     std::shared_ptr<feature_generator::Features> model;
     DownwardToWlplanAtomMapper mapper;
@@ -39,7 +42,7 @@ public:
 
     planning::State to_wlplan_state(const State &state) const;
 
-    std::unordered_map<int, int> collect_embed(const State &state);
+    std::unordered_map<int, int> compute_features(const State &state);
 
     double predict(const State &state) const;
 };
@@ -57,6 +60,6 @@ construct_wlplan_problem(
     const std::map<FactPair, PredArgsString> &mapper,
     const TaskProxy &task_proxy);
 
-} // namespace wl_utils
+} // namespace features
 
-#endif // GOOSE_WL_UTILS_H
+#endif

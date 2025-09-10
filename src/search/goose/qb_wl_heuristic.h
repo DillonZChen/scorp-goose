@@ -2,7 +2,6 @@
 #define GOOSE_QB_WL_HEURISTIC_H
 
 #include "qb_heuristic.h"
-#include "wl_utils.hpp"
 
 #include <memory>
 

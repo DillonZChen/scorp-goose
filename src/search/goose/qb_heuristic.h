@@ -1,12 +1,11 @@
 #ifndef GOOSE_QB_HEURISTIC_H
 #define GOOSE_QB_HEURISTIC_H
 
-#include "wl_utils.hpp"
-
 #include "../evaluation_context.h"
 #include "../heuristic.h"
 #include "../search_statistics.h"
 
+#include "../features/wlf_generator.h"
 #include "../utils/logging.h"
 
 #include <map>
@@ -19,7 +18,7 @@ protected:
     utils::LogProxy log;
     SearchStatistics statistics;
 
-    std::shared_ptr<wl_utils::WLFeatureGenerator> wlf_generator;
+    std::shared_ptr<features::WLFeatureGenerator> wlf_generator;
     std::map<std::pair<int, int>, int> feat_to_lowest_h;
 
     virtual int compute_heuristic(const State &ancestor_state) = 0;

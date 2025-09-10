@@ -1,8 +1,7 @@
 #ifndef GOOSE_WLGOOSE_HEURISTIC_H
 #define GOOSE_WLGOOSE_HEURISTIC_H
 
-#include "wl_utils.hpp"
-
+#include "../features/wlf_generator.h"
 #include "../heuristic.h"
 
 #include <memory>
@@ -10,8 +9,7 @@
 namespace wlgoose_heuristic {
 class WlGooseHeuristic : public Heuristic {
 protected:
-    std::shared_ptr<wl_utils::WLFeatureGenerator> model;
-    wl_utils::DownwardToWlplanAtomMapper fd_fact_to_wlplan_atom;
+    std::shared_ptr<features::WLFeatureGenerator> model;
     virtual int compute_heuristic(const State &ancestor_state) override;
 
 public:

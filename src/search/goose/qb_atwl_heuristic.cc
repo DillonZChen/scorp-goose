@@ -17,7 +17,7 @@ QbAtWlHeuristic::QbAtWlHeuristic(
     const std::string &graph_representation, const std::string &wl_algorithm)
     : QbHeuristic(
           transform, cache_estimates, description, verbosity, base_heuristic) {
-    wlf_generator = std::make_shared<wl_utils::WLFeatureGenerator>(
+    wlf_generator = std::make_shared<features::WLFeatureGenerator>(
         task, task_proxy, wl_iterations, graph_representation, wl_algorithm);
 }
 
@@ -33,9 +33,7 @@ int QbAtWlHeuristic::compute_heuristic(const State &ancestor_state) {
     State state = convert_ancestor_state(ancestor_state);
 
     // WL part
-    std::unordered_map<int, int> features =
-        wlf_generator->collect_embed(ancestor_state);
-    for (const std::pair<const int, int> &feat : features) {
+    for (const std::pair<const int, int> &feat : wlf_generator->compute_features(ancestor_state)) {
         if (feat.second == 0) {
             // feature not present, their values do not matter
             continue;

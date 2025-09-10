@@ -1,11 +1,11 @@
-#include "wl_utils.hpp"
+#include "wlf_generator.h"
 
 #include "../ext/wlplan/include/feature_generator/feature_generator_loader.hpp"
 #include "../ext/wlplan/include/feature_generator/feature_generators/iwl.hpp"
 #include "../ext/wlplan/include/feature_generator/feature_generators/lwl2.hpp"
 #include "../ext/wlplan/include/feature_generator/feature_generators/wl.hpp"
 
-namespace wl_utils {
+namespace features {
 PredArgsString fd_fact_to_pred_args(std::string &name) {
     // Replace all occurrences of '(' and ')' by ' '
     std::replace(name.begin(), name.end(), '(', ' ');
@@ -146,7 +146,7 @@ construct_wlplan_problem(
         }
 
         std::pair<std::string, std::vector<std::string>> pred_args =
-            wl_utils::fd_fact_to_pred_args(name);
+            fd_fact_to_pred_args(name);
         std::string predicate_name = pred_args.first;
         std::vector<planning::Object> args = pred_args.second;
         planning::Atom atom =
@@ -217,8 +217,8 @@ WLFeatureGenerator::WLFeatureGenerator(
 
     /* Get domain from model */
     const planning::Domain domain = *(model->get_domain());
-    const std::map<FactPair, wl_utils::PredArgsString> &helper =
-        wl_utils::get_fd_fact_to_pred_args_map(task);
+    const std::map<FactPair, PredArgsString> &helper =
+        get_fd_fact_to_pred_args_map(task);
 
     /* Construct problem */
     auto [mapper_loc, problem] =
@@ -239,11 +239,10 @@ planning::State WLFeatureGenerator::to_wlplan_state(const State &state) const {
     return planning::State(atoms);
 }
 
-std::unordered_map<int, int> WLFeatureGenerator::collect_embed(
+std::unordered_map<int, int> WLFeatureGenerator::compute_features(
     const State &state) {
     planning::State wl_state = to_wlplan_state(state);
-    std::unordered_map<int, int> features = model->collect_embed(wl_state);
-    return features;
+    return model->collect_embed(wl_state);
 }
 
 double WLFeatureGenerator::predict(const State &state) const {
@@ -252,4 +251,4 @@ double WLFeatureGenerator::predict(const State &state) const {
     return h;
 }
 
-} // namespace wl_utils
+} // namespace features

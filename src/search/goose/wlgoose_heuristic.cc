@@ -14,7 +14,7 @@ WlGooseHeuristic::WlGooseHeuristic(
     const std::shared_ptr<AbstractTask> &transform, bool cache_estimates,
     const std::string &description, utils::Verbosity verbosity)
     : Heuristic(transform, cache_estimates, description, verbosity) {
-    model = std::make_shared<wl_utils::WLFeatureGenerator>(
+    model = std::make_shared<features::WLFeatureGenerator>(
         task, task_proxy, model_file);
 }
 

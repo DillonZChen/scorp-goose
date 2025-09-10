@@ -1,5 +1,5 @@
-#ifndef GOOSE_QB_PN_HEURISTIC_H
-#define GOOSE_QB_PN_HEURISTIC_H
+#ifndef GOOSE_QB_AT_HEURISTIC_H
+#define GOOSE_QB_AT_HEURISTIC_H
 
 #include "qb_heuristic.h"
 

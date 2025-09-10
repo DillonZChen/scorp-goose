@@ -32,6 +32,8 @@ PnAtWlHeuristic::PnAtWlHeuristic(
         cerr << "PnAtWlHeuristic needs cache_estimates=true" << endl;
         utils::exit_with(utils::ExitCode::SEARCH_INPUT_ERROR);
     }
+    wlf_generator = std::make_shared<features::WLFeatureGenerator>(
+        task, task_proxy, wl_iterations, graph_representation, wl_algorithm);
 }
 
 PnAtWlHeuristic::~PnAtWlHeuristic() {
@@ -74,7 +76,7 @@ void PnAtWlHeuristic::notify_initial_state(const State &initial_state) {
     assert(!novelty_tables.contains(eval_values));
     novelty_tables.emplace(
         eval_values,
-        NoveltyTable(width, task_info, /*at=*/true, /*wl=*/true, nullptr));  // TODO
+        NoveltyTable(width, task_info, /*at=*/true, /*wl=*/true, wlf_generator));
     int novelty = novelty_tables.at(eval_values)
                       .compute_novelty_and_update_table(initial_state);
     set_novelty(initial_state, novelty);
@@ -90,7 +92,7 @@ void PnAtWlHeuristic::notify_state_transition(
             it = novelty_tables.emplace_hint(
                 it, eval_values,
                 NoveltyTable(
-                    width, task_info, /*at=*/true, /*wl=*/true, nullptr));  // TODO
+                    width, task_info, /*at=*/true, /*wl=*/true, wlf_generator));
         }
         int novelty = -1;
         // Use shortcut when the two states belong to the same partition.
