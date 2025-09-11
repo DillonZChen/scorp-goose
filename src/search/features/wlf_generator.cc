@@ -233,6 +233,12 @@ WLFGenerator::WLFGenerator(
     model->be_quiet();
 }
 
+WLFGenerator::~WLFGenerator() {
+    // Destructor
+    std::cout << "WL features collected: " << model->get_n_features()
+              << std::endl;
+}
+
 planning::State WLFGenerator::to_wlplan_state(const State &state) const {
     std::vector<std::shared_ptr<planning::Atom>> atoms;
     for (const FactProxy &fact : state) {

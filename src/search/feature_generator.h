@@ -23,10 +23,10 @@ protected:
 public:
     FeatureGenerator(const std::shared_ptr<AbstractTask> &transform);
 
+    virtual ~FeatureGenerator() = default;
+
     // NOTE: could be optimised by implementing generators?
     virtual std::vector<StateFeature> compute_features(const State &state) = 0;
-
-    virtual ~FeatureGenerator() = default;
 };
 
 extern void add_feature_generator_options_to_feature(

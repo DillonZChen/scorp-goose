@@ -8,10 +8,18 @@ AtomGenerator::AtomGenerator(const std::shared_ptr<AbstractTask> &transform)
     : FeatureGenerator(transform) {
 }
 
+AtomGenerator::~AtomGenerator() {
+    std::cout << "Atom features collected: " << collected_features.size()
+              << std::endl;
+}
+
 std::vector<StateFeature> AtomGenerator::compute_features(const State &state) {
     std::vector<StateFeature> features;
+    StateFeature feature;
     for (const FactProxy &fact : state) {
-        features.emplace_back(fact.get_var(), fact.get_value());
+        feature = StateFeature(fact.get_var(), fact.get_value());
+        features.emplace_back(feature);
+        collected_features.insert(feature);
     }
     return features;
 }

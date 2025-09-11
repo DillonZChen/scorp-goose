@@ -18,8 +18,10 @@
 
 namespace features {
 class AtomGenerator : public FeatureGenerator {
+    std::set<StateFeature> collected_features;
 public:
     AtomGenerator(const std::shared_ptr<AbstractTask> &transform);
+    ~AtomGenerator();
     std::vector<StateFeature> compute_features(const State &state);
 };
 } // namespace features

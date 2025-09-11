@@ -30,13 +30,15 @@ protected:
 
 public:
     WLFGenerator(
-        const std::shared_ptr<AbstractTask> transform, 
-        int wl_iterations, const std::string &graph_representation,
+        const std::shared_ptr<AbstractTask> transform, int wl_iterations,
+        const std::string &graph_representation,
         const std::string &wl_algorithm);
 
     WLFGenerator(
-        const std::shared_ptr<AbstractTask> transform, 
+        const std::shared_ptr<AbstractTask> transform,
         const std::string &model_file);
+
+    ~WLFGenerator();
 
     planning::State to_wlplan_state(const State &state) const;
 
