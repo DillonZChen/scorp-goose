@@ -1,8 +1,7 @@
 #ifndef FEATURES_WLF_GENERATOR_H
 #define FEATURES_WLF_GENERATOR_H
 
-#include "feature_generator.h"
-
+#include "../feature_generator.h"
 #include "../task_proxy.h"
 
 #include "../ext/wlplan/include/feature_generator/features.hpp"
@@ -19,30 +18,29 @@
 
 namespace features {
 
-using WLFeature = typename std::pair<int, int>;
 using PredArgsString =
     typename std::pair<std::string, std::vector<std::string>>;
 using DownwardToWlplanAtomMapper =
     typename std::map<FactPair, std::shared_ptr<planning::Atom>>;
 
-class WLFeatureGenerator : public FeatureGenerator<std::unordered_map<int, int>> {
+class WLFGenerator : public FeatureGenerator {
 protected:
     std::shared_ptr<feature_generator::Features> model;
     DownwardToWlplanAtomMapper mapper;
 
 public:
-    WLFeatureGenerator(
-        const std::shared_ptr<AbstractTask> task, const TaskProxy &task_proxy,
+    WLFGenerator(
+        const std::shared_ptr<AbstractTask> transform, 
         int wl_iterations, const std::string &graph_representation,
         const std::string &wl_algorithm);
 
-    WLFeatureGenerator(
-        const std::shared_ptr<AbstractTask> task, const TaskProxy &task_proxy,
+    WLFGenerator(
+        const std::shared_ptr<AbstractTask> transform, 
         const std::string &model_file);
 
     planning::State to_wlplan_state(const State &state) const;
 
-    std::unordered_map<int, int> compute_features(const State &state);
+    std::vector<StateFeature> compute_features(const State &state);
 
     double predict(const State &state) const;
 };

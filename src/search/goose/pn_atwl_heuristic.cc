@@ -32,8 +32,8 @@ PnAtWlHeuristic::PnAtWlHeuristic(
         cerr << "PnAtWlHeuristic needs cache_estimates=true" << endl;
         utils::exit_with(utils::ExitCode::SEARCH_INPUT_ERROR);
     }
-    wlf_generator = std::make_shared<features::WLFeatureGenerator>(
-        task, task_proxy, wl_iterations, graph_representation, wl_algorithm);
+    wlf_generator = std::make_shared<features::WLFGenerator>(
+        task, wl_iterations, graph_representation, wl_algorithm);
 }
 
 PnAtWlHeuristic::~PnAtWlHeuristic() {

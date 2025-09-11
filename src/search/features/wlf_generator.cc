@@ -1,9 +1,12 @@
 #include "wlf_generator.h"
 
+#include "../task_proxy.h"
+
 #include "../ext/wlplan/include/feature_generator/feature_generator_loader.hpp"
 #include "../ext/wlplan/include/feature_generator/feature_generators/iwl.hpp"
 #include "../ext/wlplan/include/feature_generator/feature_generators/lwl2.hpp"
 #include "../ext/wlplan/include/feature_generator/feature_generators/wl.hpp"
+#include "../plugins/plugin.h"
 
 namespace features {
 PredArgsString fd_fact_to_pred_args(std::string &name) {
@@ -167,13 +170,13 @@ construct_wlplan_problem(
 
 /* WLFeature Generator */
 
-WLFeatureGenerator::WLFeatureGenerator(
-    const std::shared_ptr<AbstractTask> task, const TaskProxy &task_proxy,
-    int wl_iterations, const std::string &graph_representation,
-    const std::string &wl_algorithm) {
+WLFGenerator::WLFGenerator(
+    const std::shared_ptr<AbstractTask> transform, int wl_iterations,
+    const std::string &graph_representation, const std::string &wl_algorithm)
+    : FeatureGenerator(transform) {
     /* Construct domain */
     std::map<FactPair, PredArgsString> helper =
-        get_fd_fact_to_pred_args_map(task);
+        get_fd_fact_to_pred_args_map(transform);
     // get predicates
     std::set<planning::Predicate> predicates_set;
     for (const auto &[_, pred_args] : helper) {
@@ -210,15 +213,16 @@ WLFeatureGenerator::WLFeatureGenerator(
     model->be_quiet();
 }
 
-WLFeatureGenerator::WLFeatureGenerator(
-    const std::shared_ptr<AbstractTask> task, const TaskProxy &task_proxy,
-    const std::string &model_file) {
+WLFGenerator::WLFGenerator(
+    const std::shared_ptr<AbstractTask> transform,
+    const std::string &model_file)
+    : FeatureGenerator(transform) {
     model = load_feature_generator(model_file);
 
     /* Get domain from model */
     const planning::Domain domain = *(model->get_domain());
     const std::map<FactPair, PredArgsString> &helper =
-        get_fd_fact_to_pred_args_map(task);
+        get_fd_fact_to_pred_args_map(transform);
 
     /* Construct problem */
     auto [mapper_loc, problem] =
@@ -229,7 +233,7 @@ WLFeatureGenerator::WLFeatureGenerator(
     model->be_quiet();
 }
 
-planning::State WLFeatureGenerator::to_wlplan_state(const State &state) const {
+planning::State WLFGenerator::to_wlplan_state(const State &state) const {
     std::vector<std::shared_ptr<planning::Atom>> atoms;
     for (const FactProxy &fact : state) {
         if (mapper.count(fact.get_pair())) {
@@ -239,16 +243,50 @@ planning::State WLFeatureGenerator::to_wlplan_state(const State &state) const {
     return planning::State(atoms);
 }
 
-std::unordered_map<int, int> WLFeatureGenerator::compute_features(
-    const State &state) {
+std::vector<StateFeature> WLFGenerator::compute_features(const State &state) {
     planning::State wl_state = to_wlplan_state(state);
-    return model->collect_embed(wl_state);
+    std::unordered_map<int, int> embeddings = model->collect_embed(wl_state);
+    std::vector<StateFeature> features;
+    for (const auto &[key, value] : embeddings) {
+        if (value == 0) {
+            // feature not present, their values do not matter
+            continue;
+        }
+        features.emplace_back(key, value);
+    }
+    return features;
 }
 
-double WLFeatureGenerator::predict(const State &state) const {
+double WLFGenerator::predict(const State &state) const {
     planning::State wl_state = to_wlplan_state(state);
     double h = model->predict(wl_state);
     return h;
 }
 
-} // namespace features
+class WLFGeneratorFeature
+    : public plugins::TypedFeature<FeatureGenerator, WLFGenerator> {
+public:
+    WLFGeneratorFeature() : TypedFeature("wlfgen") {
+        document_title("WL Feature Generator");
+
+        add_option<int>("l", "Number of wl iterations", "2");
+        add_option<std::string>("g", "Graph representation", "\"ilg\"");
+        add_option<std::string>("w", "WL algorithm", "\"wl\"");
+        add_feature_generator_options_to_feature(*this, "wlfgen");
+
+        document_language_support("action costs", "ignored by design");
+        document_language_support("conditional effects", "ignored by design");
+        document_language_support("axioms", "ignored by design");
+    }
+
+    virtual std::shared_ptr<WLFGenerator> create_component(
+        const plugins::Options &opts) const override {
+        return plugins::make_shared_from_arg_tuples<WLFGenerator>(
+            opts.get<std::shared_ptr<AbstractTask>>("transform"),
+            opts.get<int>("l"), opts.get<std::string>("g"),
+            opts.get<std::string>("w"));
+    }
+};
+
+static plugins::FeaturePlugin<WLFGeneratorFeature> _plugin;
+} // features

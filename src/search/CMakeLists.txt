@@ -1141,8 +1141,9 @@ create_fast_downward_library(
     NAME features
     HELP "State based features"
     SOURCES
-        features/feature_generator
+        feature_generator
         features/wlf_generator
+        features/atom_generator
     DEPENDENCY_ONLY
 )
 
@@ -1161,36 +1162,7 @@ create_fast_downward_library(
     HELP "Quantified-Both heuristic"
     SOURCES
         goose/qb_heuristic
-    DEPENDENCY_ONLY
-)
-
-create_fast_downward_library(
-    NAME qb_wl_heuristic
-    HELP "Quantified-Both heuristic with WL features"
-    SOURCES
-        goose/qb_wl_heuristic
     DEPENDS
-        qb_heuristic
-        features
-)
-
-create_fast_downward_library(
-    NAME qb_at_heuristic
-    HELP "Quantified-Both heuristic with atom features"
-    SOURCES
-        goose/qb_at_heuristic
-    DEPENDS
-        qb_heuristic
-        features
-)
-
-create_fast_downward_library(
-    NAME qb_atwl_heuristic
-    HELP "Quantified-Both heuristic with atom and WL features"
-    SOURCES
-        goose/qb_atwl_heuristic
-    DEPENDS
-        qb_heuristic
         features
 )
 

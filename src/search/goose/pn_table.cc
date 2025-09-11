@@ -13,7 +13,7 @@ static inline FactPair get_fact(const State &state, int var) {
 
 NoveltyTable::NoveltyTable(
     int width, const novelty::TaskInfo &task_info, bool at, bool wl,
-    const std::shared_ptr<features::WLFeatureGenerator> &wlf_generator)
+    const std::shared_ptr<features::WLFGenerator> &wlf_generator)
     : width(width),
       task_info(task_info),
       at(at),
@@ -60,13 +60,11 @@ int NoveltyTable::compute_novelty_and_update_table(const State &state) {
 
     /* WL features */
     if (wl) {
-        std::unordered_map<int, int> features_map =
+        std::vector<StateFeature> features =
             wlf_generator->compute_features(state);
-        std::set<features::WLFeature> features(
-            features_map.begin(), features_map.end());
 
         // Check for novelty 1.
-        for (const features::WLFeature &feat : features) {
+        for (const StateFeature &feat : features) {
             if (!seen_wl_features.count(feat)) {
                 seen_wl_features.insert(feat);
                 min_novelty = 1;
@@ -75,12 +73,12 @@ int NoveltyTable::compute_novelty_and_update_table(const State &state) {
 
         // Check for novelty 2.
         if (width == 2) {
-            for (const features::WLFeature &f1 : features) {
-                for (const features::WLFeature &f2 : features) {
+            for (const StateFeature &f1 : features) {
+                for (const StateFeature &f2 : features) {
                     if (f1 >= f2) {
                         continue;
                     }
-                    std::pair<features::WLFeature, features::WLFeature>
+                    std::pair<StateFeature, StateFeature>
                         feature_pair = {f1, f2};
                     if (!seen_wl_feature_pairs.count(feature_pair)) {
                         seen_wl_feature_pairs.insert(feature_pair);

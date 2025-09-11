@@ -19,19 +19,19 @@ class NoveltyTable {
     const novelty::TaskInfo &task_info;
     std::vector<bool> seen_facts;
     std::vector<bool> seen_fact_pairs;
-    std::set<features::WLFeature> seen_wl_features;
-    std::set<std::pair<features::WLFeature, features::WLFeature>>
+    std::set<StateFeature> seen_wl_features;
+    std::set<std::pair<StateFeature, StateFeature>>
         seen_wl_feature_pairs;
 
     bool at;
     bool wl;
 
-    const std::shared_ptr<features::WLFeatureGenerator> wlf_generator;
+    const std::shared_ptr<features::WLFGenerator> wlf_generator;
 
 public:
     NoveltyTable(
         int width, const novelty::TaskInfo &task_info, bool at, bool wl,
-        const std::shared_ptr<features::WLFeatureGenerator> &wlf_generator);
+        const std::shared_ptr<features::WLFGenerator> &wlf_generator);
 
     static const int UNKNOWN_NOVELTY = 3;
 

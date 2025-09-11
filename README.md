@@ -3,7 +3,9 @@ Scorpion extension for [Goose](https://github.com/DillonZChen/goose).
 View the diff between this fork and Scorpion at https://github.com/jendrikseipp/scorpion/compare/scorpion...DillonZChen:scorp-goose:scorp-goose
 
 Summary of differences:
-- Most source code changes and additions are located in `src/search/goose` and `src/search/CMakeLists.txt`
+- New search directories: `src/search/goose` and `src/search/features`
+- New search files: `feature_generator.h`
+- Additions are summarised at the end of `src/search/CMakeLists.txt`
 - The constant values for `DEAD_END` and `NO_VALUE` are changed as goose heuristics can be negative.
 
 ---

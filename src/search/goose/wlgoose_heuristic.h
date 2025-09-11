@@ -9,7 +9,7 @@
 namespace wlgoose_heuristic {
 class WlGooseHeuristic : public Heuristic {
 protected:
-    std::shared_ptr<features::WLFeatureGenerator> model;
+    std::shared_ptr<features::WLFGenerator> model;
     virtual int compute_heuristic(const State &ancestor_state) override;
 
 public:

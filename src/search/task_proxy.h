@@ -158,6 +158,10 @@ public:
 
     VariableProxy get_variable() const;
 
+    int get_var() const {
+        return fact.var;
+    }
+
     int get_value() const {
         return fact.value;
     }

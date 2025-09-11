@@ -22,7 +22,7 @@ class PnAtWlHeuristic : public Heuristic {
     void set_novelty(const State &state, int novelty);
     std::vector<int> evaluate_state(const State &state);
 
-    std::shared_ptr<features::WLFeatureGenerator> wlf_generator;
+    std::shared_ptr<features::WLFGenerator> wlf_generator;
 
 protected:
     virtual int compute_heuristic(const State &ancestor_state) override;
