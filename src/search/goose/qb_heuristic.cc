@@ -34,14 +34,15 @@ int QbHeuristic::compute_heuristic(const State &ancestor_state) {
 
     State state = convert_ancestor_state(ancestor_state);
 
-    for (const auto &fgen : fgens) {
-        for (const StateFeature &feat : fgen->compute_features(state)) {
-            // Process each feature
-            bool in_map = feat_to_min_h.count(feat) > 0;
-            if (!in_map || h < feat_to_min_h[feat]) {
-                feat_to_min_h[feat] = h;
+    StateFeatureIndexed feat_i;
+    for (int i = 0; i < n_fgens; i++) {
+        for (const StateFeature &feat : fgens[i]->compute_features(state)) {
+            feat_i = std::make_pair(feat, i);
+            bool in_map = feat_to_min_h.count(feat_i) > 0;
+            if (!in_map || h < feat_to_min_h[feat_i]) {
+                feat_to_min_h[feat_i] = h;
                 nov_h -= 1;
-            } else if (in_map && h > feat_to_min_h[feat]) {
+            } else if (in_map && h > feat_to_min_h[feat_i]) {
                 non_h += 1;
             }
         }

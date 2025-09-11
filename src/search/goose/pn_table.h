@@ -19,10 +19,8 @@ class PnTable {
     const novelty::TaskInfo &task_info;
     const std::vector<std::shared_ptr<FeatureGenerator>> fgens;
     const int n_fgens;
-    std::set<StateFeature> seen_features;
-    std::set<std::pair<StateFeature, StateFeature>> seen_feature_pairs;
-
-    const std::shared_ptr<features::WLFGenerator> wlf_generator;
+    std::set<StateFeatureIndexed> seen_features;
+    std::set<std::tuple<StateFeature, StateFeature, int>> seen_feature_pairs;
 
 public:
     PnTable(

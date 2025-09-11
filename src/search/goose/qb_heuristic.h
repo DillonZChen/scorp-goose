@@ -21,7 +21,7 @@ protected:
     utils::LogProxy log;
     SearchStatistics statistics;
 
-    std::map<StateFeature, int> feat_to_min_h;
+    std::map<StateFeatureIndexed, int> feat_to_min_h;
 
     virtual int compute_heuristic(const State &ancestor_state) override;
 

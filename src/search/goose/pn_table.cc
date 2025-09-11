@@ -20,13 +20,16 @@ PnTable::PnTable(
 int PnTable::compute_novelty_and_update_table(const State &state) {
     int min_novelty = UNKNOWN_NOVELTY;
 
-    for (const auto &fg : fgens) {
-        std::vector<StateFeature> features = fg->compute_features(state);
+    StateFeatureIndexed feat_i;
+    std::tuple<StateFeature, StateFeature, int> feature_pair_i;
+    for (int i = 0; i < n_fgens; i++) {
+        std::vector<StateFeature> features = fgens[i]->compute_features(state);
 
         // Check for novelty 1.
         for (const StateFeature &feat : features) {
-            if (!seen_features.count(feat)) {
-                seen_features.insert(feat);
+            feat_i = std::make_pair(feat, i);
+            if (!seen_features.count(feat_i)) {
+                seen_features.insert(feat_i);
                 min_novelty = 1;
             }
         }
@@ -38,10 +41,9 @@ int PnTable::compute_novelty_and_update_table(const State &state) {
                     if (f1 >= f2) {
                         continue;
                     }
-                    std::pair<StateFeature, StateFeature> feature_pair = {
-                        f1, f2};
-                    if (!seen_feature_pairs.count(feature_pair)) {
-                        seen_feature_pairs.insert(feature_pair);
+                    feature_pair_i = {f1, f2, i};
+                    if (!seen_feature_pairs.count(feature_pair_i)) {
+                        seen_feature_pairs.insert(feature_pair_i);
                         min_novelty = 2;
                     }
                 }

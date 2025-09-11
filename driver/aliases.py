@@ -157,7 +157,7 @@ ALIASES["nolan-goose"] = [
     "--evaluator", "hlm=landmark_sum(lm_factory=lm_reasonable_orders_hps(lm_rhw()), transform=adapt_costs(one), pref=false)",
     "--evaluator", "hff=ff(transform=adapt_costs(one))",
     "--search", "lazy(alt([single(hff), single(hff, pref_only=true), single(hlm, pref_only=true), "
-        "tiebreaking([pnatwl(width=1, evals=[hlm]), hlm, g()])], boost=1000), "
+        "tiebreaking([pn(width=2, evals=[hlm], feats=[wlfgen()]), hlm, g()])], boost=1000), "
         "preferred=[hff, hlm], cost_type=one, reopen_closed=false)"]
 
 PORTFOLIOS = {}

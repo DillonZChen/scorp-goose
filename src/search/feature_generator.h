@@ -10,6 +10,7 @@
 // We could use templates to generalised this. However, I'm not sure how this
 // would work with Fast Downward plugins
 using StateFeature = typename std::pair<int, int>;
+using StateFeatureIndexed = typename std::pair<StateFeature, int>;
 
 class FeatureGenerator {
 protected:
