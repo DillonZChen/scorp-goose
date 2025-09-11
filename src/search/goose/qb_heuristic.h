@@ -16,7 +16,7 @@ namespace qb_heuristic {
 class QbHeuristic : public Heuristic {
 protected:
     std::shared_ptr<Evaluator> base_heuristic;
-    std::vector<std::shared_ptr<FeatureGenerator>> fgens;
+    const std::vector<std::shared_ptr<FeatureGenerator>> fgens;
     const int n_fgens;
     utils::LogProxy log;
     SearchStatistics statistics;
@@ -30,7 +30,8 @@ public:
         const std::shared_ptr<AbstractTask> &transform, bool cache_estimates,
         const std::string &description, utils::Verbosity verbosity,
         const std::shared_ptr<Evaluator> base_heuristic,
-        std::vector<std::shared_ptr<FeatureGenerator>> feature_generators);
+        const std::vector<std::shared_ptr<FeatureGenerator>>
+            &feature_generators);
 };
 } // namespace qb_heuristic
 

@@ -1,4 +1,4 @@
-#include "pn_atwl_heuristic.h"
+#include "pn_heuristic.h"
 
 #include "../evaluation_context.h"
 
@@ -11,53 +11,52 @@
 using namespace std;
 
 namespace pn_heuristic {
-PnAtWlHeuristic::PnAtWlHeuristic(
+PnHeuristic::PnHeuristic(
     int width, const std::vector<std::shared_ptr<Evaluator>> &evals,
-    bool consider_only_novel_states, int wl_iterations,
-    const std::string &graph_representation, const std::string &wl_algorithm,
+    const std::vector<std::shared_ptr<FeatureGenerator>> &fgens,
+    bool consider_only_novel_states,
     const std::shared_ptr<AbstractTask> &transform, bool cache_estimates,
     const std::string &description, utils::Verbosity verbosity)
     : Heuristic(transform, cache_estimates, description, verbosity),
       width(width),
       consider_only_novel_states(consider_only_novel_states),
       evals(evals),
+      fgens(fgens),
+      n_fgens(fgens.size()),
       task_info(task_proxy),
-      novelty_to_num_states(NoveltyTable::UNKNOWN_NOVELTY, 0) {
+      novelty_to_num_states(PnTable::UNKNOWN_NOVELTY, 0) {
     use_for_reporting_minima = false;
     use_for_boosting = false;
     if (log.is_at_least_debug()) {
         log << "Initializing novelty evaluator..." << endl;
     }
     if (!does_cache_estimates()) {
-        cerr << "PnAtWlHeuristic needs cache_estimates=true" << endl;
+        cerr << "PnHeuristic needs cache_estimates=true" << endl;
         utils::exit_with(utils::ExitCode::SEARCH_INPUT_ERROR);
     }
-    wlf_generator = std::make_shared<features::WLFGenerator>(
-        task, wl_iterations, graph_representation, wl_algorithm);
 }
 
-PnAtWlHeuristic::~PnAtWlHeuristic() {
+PnHeuristic::~PnHeuristic() {
     log << "Num states per novelty: " << novelty_to_num_states << endl;
 }
 
-void PnAtWlHeuristic::set_novelty(const State &state, int novelty) {
+void PnHeuristic::set_novelty(const State &state, int novelty) {
     assert(heuristic_cache[state].dirty);
-    if (consider_only_novel_states &&
-        novelty == NoveltyTable::UNKNOWN_NOVELTY) {
+    if (consider_only_novel_states && novelty == PnTable::UNKNOWN_NOVELTY) {
         novelty = DEAD_END;
     }
     heuristic_cache[state].h = novelty;
     heuristic_cache[state].dirty = false;
 }
 
-void PnAtWlHeuristic::get_path_dependent_evaluators(set<Evaluator *> &evals) {
+void PnHeuristic::get_path_dependent_evaluators(set<Evaluator *> &evals) {
     evals.insert(this);
     for (auto &evaluator : this->evals) {
         evaluator->get_path_dependent_evaluators(evals);
     }
 }
 
-vector<int> PnAtWlHeuristic::evaluate_state(const State &state) {
+vector<int> PnHeuristic::evaluate_state(const State &state) {
     state.unpack();
     EvaluationContext eval_context(state);
     vector<int> eval_values;
@@ -69,20 +68,18 @@ vector<int> PnAtWlHeuristic::evaluate_state(const State &state) {
     return eval_values;
 }
 
-void PnAtWlHeuristic::notify_initial_state(const State &initial_state) {
+void PnHeuristic::notify_initial_state(const State &initial_state) {
     vector<int> eval_values = evaluate_state(initial_state);
     log << "Evaluator values for initial state: " << eval_values << endl;
     // For the initial state, the table should have no entry.
-    assert(!novelty_tables.contains(eval_values));
-    novelty_tables.emplace(
-        eval_values,
-        NoveltyTable(width, task_info, /*at=*/true, /*wl=*/true, wlf_generator));
+    assert(!novelty_tables.count(eval_values));
+    novelty_tables.emplace(eval_values, PnTable(width, task_info, fgens));
     int novelty = novelty_tables.at(eval_values)
                       .compute_novelty_and_update_table(initial_state);
     set_novelty(initial_state, novelty);
 }
 
-void PnAtWlHeuristic::notify_state_transition(
+void PnHeuristic::notify_state_transition(
     const State &parent, OperatorID op_id, const State &state) {
     // Only compute novelty for new states.
     if (heuristic_cache[state].dirty) {
@@ -90,36 +87,41 @@ void PnAtWlHeuristic::notify_state_transition(
         auto it = novelty_tables.find(eval_values);
         if (it == novelty_tables.end()) {
             it = novelty_tables.emplace_hint(
-                it, eval_values,
-                NoveltyTable(
-                    width, task_info, /*at=*/true, /*wl=*/true, wlf_generator));
+                it, eval_values, PnTable(width, task_info, fgens));
         }
         int novelty = -1;
-        // Use shortcut when the two states belong to the same partition.
-        if (evaluate_state(parent) == eval_values) {
-            novelty = it->second.compute_novelty_and_update_table(
-                parent, op_id.get_index(), state);
-        } else {
-            novelty = it->second.compute_novelty_and_update_table(state);
-        }
+        novelty = it->second.compute_novelty_and_update_table(state);
+
+        // NOTE: below not supported
+        // void to hide warning that the variables are not used
+        (void)op_id;
+        (void)parent;
+        // // Use shortcut when the two states belong to the same partition.
+        // if (evaluate_state(parent) == eval_values) {
+        //     novelty = it->second.compute_novelty_and_update_table(
+        //         parent, op_id.get_index(), state);
+        // } else {
+        //     novelty = it->second.compute_novelty_and_update_table(state);
+        // }
+
         ++novelty_to_num_states[novelty - 1];
         set_novelty(state, novelty);
     }
 }
 
-bool PnAtWlHeuristic::dead_ends_are_reliable() const {
+bool PnHeuristic::dead_ends_are_reliable() const {
     return false;
 }
 
-int PnAtWlHeuristic::compute_heuristic(const State &) {
+int PnHeuristic::compute_heuristic(const State &) {
     ABORT("Novelty should already be stored in heuristic cache.");
 }
 
-class PnAtWlHeuristicFeature
-    : public plugins::TypedFeature<Evaluator, PnAtWlHeuristic> {
+class PnHeuristicFeature
+    : public plugins::TypedFeature<Evaluator, PnHeuristic> {
 public:
-    PnAtWlHeuristicFeature() : TypedFeature("pnatwl") {
-        document_title("Novelty evaluator");
+    PnHeuristicFeature() : TypedFeature("pn") {
+        document_title("Partition novelty heuristic");
         document_synopsis(
             "Computes the novelty w(s) of a state s given the partition functions "
             "evals=⟨h_1, ..., h_n⟩ as the size of the smallest set of atoms A such "
@@ -153,13 +155,9 @@ public:
             "max_variables_for_width2",
             "if there are more variables, use width=1", "100",
             plugins::Bounds("0", "infinity"));
-
-        // WL parameters
-        add_option<int>("l", "Number of wl iterations", "2");
-        add_option<std::string>("g", "Graph representation", "\"ilg\"");
-        add_option<std::string>("w", "WL algorithm", "\"wl\"");
-
-        add_heuristic_options_to_feature(*this, "pnwl");
+        add_list_option<std::shared_ptr<FeatureGenerator>>(
+            "feats", "Feature generators");
+        add_heuristic_options_to_feature(*this, "pn");
 
         document_language_support("action costs", "ignored by design");
         document_language_support("conditional effects", "supported");
@@ -171,7 +169,7 @@ public:
         document_property("preferred operators", "no");
     }
 
-    virtual shared_ptr<PnAtWlHeuristic> create_component(
+    virtual shared_ptr<PnHeuristic> create_component(
         const plugins::Options &opts) const override {
         int width = opts.get<int>("width");
         int num_vars =
@@ -183,13 +181,13 @@ public:
                          << " --> use width=1" << endl;
             width = 1;
         }
-        return plugins::make_shared_from_arg_tuples<PnAtWlHeuristic>(
+        return plugins::make_shared_from_arg_tuples<PnHeuristic>(
             width, opts.get_list<shared_ptr<Evaluator>>("evals"),
-            opts.get<bool>("consider_only_novel_states"), opts.get<int>("l"),
-            opts.get<std::string>("g"), opts.get<std::string>("w"),
+            opts.get_list<std::shared_ptr<FeatureGenerator>>("feats"),
+            opts.get<bool>("consider_only_novel_states"),
             get_heuristic_arguments_from_options(opts));
     }
 };
 
-static plugins::FeaturePlugin<PnAtWlHeuristicFeature> _plugin;
+static plugins::FeaturePlugin<PnHeuristicFeature> _plugin;
 }

@@ -14,7 +14,7 @@ QbHeuristic::QbHeuristic(
     const std::shared_ptr<AbstractTask> &transform, bool cache_estimates,
     const std::string &description, utils::Verbosity verbosity,
     const std::shared_ptr<Evaluator> base_heuristic,
-    std::vector<std::shared_ptr<FeatureGenerator>> fgens)
+    const std::vector<std::shared_ptr<FeatureGenerator>> &fgens)
     : Heuristic(transform, cache_estimates, description, verbosity),
       base_heuristic(base_heuristic),
       fgens(fgens),

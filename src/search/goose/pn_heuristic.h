@@ -1,21 +1,23 @@
-#ifndef GOOSE_PN_AT_HEURISTIC_H
-#define GOOSE_PN_AT_HEURISTIC_H
+#ifndef GOOSE_PN_HEURISTIC_H
+#define GOOSE_PN_HEURISTIC_H
 
 #include "pn_table.h"
 
 #include "../heuristic.h"
+
 #include "../novelty/novelty_table.h"
 
 namespace pn_heuristic {
-class PnAtWlHeuristic : public Heuristic {
+class PnHeuristic : public Heuristic {
     const int width;
     const bool consider_only_novel_states;
 
     const std::vector<std::shared_ptr<Evaluator>> evals;
+    const std::vector<std::shared_ptr<FeatureGenerator>> fgens;
+    const int n_fgens;
     const novelty::TaskInfo task_info;
 
-    std::unordered_map<
-        std::vector<int>, NoveltyTable, utils::Hash<std::vector<int>>>
+    std::unordered_map<std::vector<int>, PnTable, utils::Hash<std::vector<int>>>
         novelty_tables;
     std::vector<int> novelty_to_num_states;
 
@@ -28,13 +30,14 @@ protected:
     virtual int compute_heuristic(const State &ancestor_state) override;
 
 public:
-    PnAtWlHeuristic(
+    PnHeuristic(
         int width, const std::vector<std::shared_ptr<Evaluator>> &evals,
-        bool consider_only_novel_states, int wl_iterations,
-        const std::string &graph_representation, const std::string &wl_algorithm,
+        const std::vector<std::shared_ptr<FeatureGenerator>>
+            &feature_generators,
+        bool consider_only_novel_states,
         const std::shared_ptr<AbstractTask> &transform, bool cache_estimates,
         const std::string &description, utils::Verbosity verbosity);
-    virtual ~PnAtWlHeuristic() override;
+    virtual ~PnHeuristic() override;
 
     virtual void get_path_dependent_evaluators(
         std::set<Evaluator *> &evals) override;
@@ -46,14 +49,14 @@ public:
 
 // HACK: we need to notify landmark heuristics before evaluating the novelty
 // heuristics that depend on them.
-struct OrderPnAtWlHeuristicsLastHack {
+struct OrderPnHeuristicsLastHack {
     bool operator()(const Evaluator *lhs, const Evaluator *rhs) const {
-        if (dynamic_cast<const pn_heuristic::PnAtWlHeuristic *>(lhs) != nullptr &&
-            dynamic_cast<const pn_heuristic::PnAtWlHeuristic *>(rhs) == nullptr) {
+        if (dynamic_cast<const pn_heuristic::PnHeuristic *>(lhs) != nullptr &&
+            dynamic_cast<const pn_heuristic::PnHeuristic *>(rhs) == nullptr) {
             return false;
         }
-        if (dynamic_cast<const pn_heuristic::PnAtWlHeuristic *>(lhs) == nullptr &&
-            dynamic_cast<const pn_heuristic::PnAtWlHeuristic *>(rhs) != nullptr) {
+        if (dynamic_cast<const pn_heuristic::PnHeuristic *>(lhs) == nullptr &&
+            dynamic_cast<const pn_heuristic::PnHeuristic *>(rhs) != nullptr) {
             return true;
         }
         return lhs < rhs;
