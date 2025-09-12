@@ -22,7 +22,7 @@ class AtomGenerator : public FeatureGenerator {
 public:
     AtomGenerator(const std::shared_ptr<AbstractTask> &transform);
     ~AtomGenerator();
-    std::vector<StateFeature> compute_features(const State &state);
+    Generator<StateFeature> compute_features(const State &state);
 };
 } // namespace features
 

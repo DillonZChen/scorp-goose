@@ -249,18 +249,15 @@ planning::State WLFGenerator::to_wlplan_state(const State &state) const {
     return planning::State(atoms);
 }
 
-std::vector<StateFeature> WLFGenerator::compute_features(const State &state) {
+Generator<StateFeature> WLFGenerator::compute_features(const State &state) {
     planning::State wl_state = to_wlplan_state(state);
-    std::unordered_map<int, int> embeddings = model->collect_embed(wl_state);
-    std::vector<StateFeature> features;
-    for (const auto &[key, value] : embeddings) {
+    for (const auto &[key, value] : model->collect_embed(wl_state)) {
         if (value == 0) {
             // feature not present, their values do not matter
             continue;
         }
-        features.emplace_back(key, value);
+        co_yield std::make_pair(key, value);
     }
-    return features;
 }
 
 double WLFGenerator::predict(const State &state) const {

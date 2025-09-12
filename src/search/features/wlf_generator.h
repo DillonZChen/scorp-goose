@@ -42,7 +42,7 @@ public:
 
     planning::State to_wlplan_state(const State &state) const;
 
-    std::vector<StateFeature> compute_features(const State &state);
+    Generator<StateFeature> compute_features(const State &state);
 
     double predict(const State &state) const;
 };

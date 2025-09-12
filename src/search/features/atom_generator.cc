@@ -13,15 +13,13 @@ AtomGenerator::~AtomGenerator() {
               << std::endl;
 }
 
-std::vector<StateFeature> AtomGenerator::compute_features(const State &state) {
-    std::vector<StateFeature> features;
+Generator<StateFeature> AtomGenerator::compute_features(const State &state) {
     StateFeature feature;
     for (const FactProxy &fact : state) {
         feature = StateFeature(fact.get_var(), fact.get_value());
-        features.emplace_back(feature);
         collected_features.insert(feature);
+        co_yield feature;
     }
-    return features;
 }
 
 class AtomGeneratorFeature

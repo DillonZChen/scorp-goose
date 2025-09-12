@@ -23,7 +23,10 @@ int PnTable::compute_novelty_and_update_table(const State &state) {
     StateFeatureIndexed feat_i;
     std::tuple<StateFeature, StateFeature, int> feature_pair_i;
     for (int i = 0; i < n_fgens; i++) {
-        std::vector<StateFeature> features = fgens[i]->compute_features(state);
+        std::vector<StateFeature> features;
+        for (const StateFeature &feat : fgens[i]->compute_features(state)) {
+            features.push_back(feat);
+        }
 
         // Check for novelty 1.
         for (const StateFeature &feat : features) {
