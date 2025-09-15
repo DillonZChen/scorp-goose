@@ -14,6 +14,8 @@
 // would work with Fast Downward plugins
 using StateFeature = typename std::pair<int, int>;
 using StateFeatureIndexed = typename std::pair<StateFeature, int>;
+using StateFeaturePairIndexed =
+    typename std::tuple<StateFeature, StateFeature, int>;
 
 template<typename T>
 struct Generator {
@@ -67,6 +69,7 @@ struct Generator {
             return *this;
         }
         bool operator!=(const iterator &other) const {
+            (void)other;
             return !done;
         }
     };

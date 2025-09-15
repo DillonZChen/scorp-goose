@@ -14,7 +14,7 @@
 namespace pn_heuristic {
 
 class PnTable {
-    int width;
+    const int width;
 
     const novelty::TaskInfo &task_info;
     const std::vector<std::shared_ptr<FeatureGenerator>> fgens;
@@ -24,7 +24,7 @@ class PnTable {
 
 public:
     PnTable(
-        int width, const novelty::TaskInfo &task_info,
+        const int width, const novelty::TaskInfo &task_info,
         const std::vector<std::shared_ptr<FeatureGenerator>> fgens);
 
     static const int UNKNOWN_NOVELTY = 3;
