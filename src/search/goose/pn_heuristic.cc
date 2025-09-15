@@ -144,7 +144,7 @@ public:
                 "to appear", "AAAI Press", "2025"));
 
         add_option<int>(
-            "width", "maximum conjunction size", "2",
+            "width", "maximum conjunction size", "1",
             plugins::Bounds("1", "2"));
         add_list_option<shared_ptr<Evaluator>>(
             "evals", "evaluators", "[const()]");
@@ -153,7 +153,7 @@ public:
             "true");
         add_option<int>(
             "max_variables_for_width2",
-            "if there are more variables, use width=1", "100",
+            "if there are more variables, use width=1", "infinity",
             plugins::Bounds("0", "infinity"));
         add_list_option<std::shared_ptr<FeatureGenerator>>(
             "feats", "Feature generators");

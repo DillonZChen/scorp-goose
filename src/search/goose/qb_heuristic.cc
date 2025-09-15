@@ -87,10 +87,10 @@ public:
         add_option<std::shared_ptr<Evaluator>>(
             "eval", "Heuristic for novelty calculation");
         add_option<int>(
-            "width", "maximum feature size", "2", plugins::Bounds("1", "2"));
+            "width", "maximum feature size", "1", plugins::Bounds("1", "2"));
         add_option<int>(
             "max_variables_for_width2",
-            "if there are more variables, use width=1", "100",
+            "if there are more variables, use width=1", "infinity",
             plugins::Bounds("0", "infinity"));
         add_list_option<std::shared_ptr<FeatureGenerator>>(
             "feats", "Feature generators");
