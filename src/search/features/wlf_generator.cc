@@ -37,49 +37,45 @@ PredArgsString fd_fact_to_pred_args(std::string &name) {
     return {predicate_name, args};
 }
 
-std::map<FactPair, std::pair<std::string, bool>> get_pddl_facts(
-    FactsProxy facts) {
-    std::map<FactPair, std::pair<std::string, bool>> ret;
-    for (FactProxy fact : facts) {
-        std::string name = fact.get_name();
-        bool positive;
+std::pair<std::string, bool> get_pddl_fact(FactProxy fact) {
+    std::string name = fact.get_name();
+    bool positive;
 
-        // Convert from FDR var-val pairs back to propositions
-        if (name == "<none of those>" || name.substr(0, 12) == "NegatedAtom ") {
-            continue;
-        } else if (name.substr(0, 12) == "NegatedAtom ") {
-            name = name.substr(12);
-            positive = false;
-        } else if (name.substr(0, 5) == "Atom ") {
-            name = name.substr(5);
-            positive = true;
-        } else {
-            std::cout
-                << "Error: substring of downward fact does not start with 'Atom ': "
-                << "or 'NegatedAtom '" << name << std::endl;
-            exit(-1);
-        }
-
-        ret[fact.get_pair()] = {name, positive};
+    // Convert from FDR var-val pairs back to propositions
+    if (name == "<none of those>" || name.substr(0, 12) == "NegatedAtom ") {
+        return {"", true};
+    } else if (name.substr(0, 12) == "NegatedAtom ") {
+        name = name.substr(12);
+        positive = false;
+    } else if (name.substr(0, 5) == "Atom ") {
+        name = name.substr(5);
+        positive = true;
+    } else {
+        std::cout
+            << "Error: substring of downward fact does not start with 'Atom ': "
+            << "or 'NegatedAtom '" << name << std::endl;
+        exit(-1);
     }
-    return ret;
+
+    return {name, positive};
 }
 
 std::map<FactPair, PredArgsString> get_fd_fact_to_pred_args_map(
     const std::shared_ptr<AbstractTask> task) {
     FactsProxy facts(*task);
     std::map<FactPair, PredArgsString> ret;
-    for (const auto &[fact_pair, pddl_fact] : get_pddl_facts(facts)) {
-        std::string pddl_fact_name = pddl_fact.first;
-        bool positive = pddl_fact.second;
-        if (!positive) {
+    for (const auto &fact : facts) {
+        std::pair<std::string, bool> pddl_fact_info = get_pddl_fact(fact);
+        std::string pddl_fact_name = pddl_fact_info.first;
+        bool positive = pddl_fact_info.second;
+        if (!positive || pddl_fact_name.empty()) {
             continue;
         }
 
         std::pair<std::string, std::vector<std::string>> pred_args =
             fd_fact_to_pred_args(pddl_fact_name);
 
-        ret.insert({fact_pair, pred_args});
+        ret.insert({fact.get_pair(), pred_args});
     }
 
     return ret;
@@ -129,27 +125,15 @@ construct_wlplan_problem(
     std::vector<planning::Atom> negative_goals;
 
     for (FactProxy goal : task_proxy.get_goals()) {
-        std::string name = goal.get_name();
-        bool positive;
-
-        // Convert from FDR var-val pairs back to propositions
-        if (name == "<none of those>") {
+        std::pair<std::string, bool> pddl_fact_info = get_pddl_fact(goal);
+        std::string pddl_fact_name = pddl_fact_info.first;
+        bool positive = pddl_fact_info.second;
+        if (pddl_fact_name.empty()) {
             continue;
-        } else if (name.substr(0, 12) == "NegatedAtom ") {
-            name = name.substr(12);
-            positive = false;
-        } else if (name.substr(0, 5) == "Atom ") {
-            name = name.substr(5);
-            positive = true;
-        } else {
-            std::cout
-                << "Error: substring of downward fact does not start with 'Atom ': "
-                << "or 'NegatedAtom '" << name << std::endl;
-            exit(-1);
         }
 
         std::pair<std::string, std::vector<std::string>> pred_args =
-            fd_fact_to_pred_args(name);
+            fd_fact_to_pred_args(pddl_fact_name);
         std::string predicate_name = pred_args.first;
         std::vector<planning::Object> args = pred_args.second;
         planning::Atom atom =

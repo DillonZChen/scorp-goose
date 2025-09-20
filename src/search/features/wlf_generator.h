@@ -48,8 +48,7 @@ public:
 };
 
 PredArgsString fd_fact_to_pred_args(std::string &name);
-std::map<FactPair, std::pair<std::string, bool>> get_pddl_facts(
-    FactsProxy facts);
+std::pair<std::string, bool> get_pddl_fact(FactProxy fact);
 
 std::map<FactPair, PredArgsString> get_fd_fact_to_pred_args_map(
     const std::shared_ptr<AbstractTask> task);
