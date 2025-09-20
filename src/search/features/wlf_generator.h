@@ -55,8 +55,7 @@ std::map<FactPair, PredArgsString> get_fd_fact_to_pred_args_map(
 
 std::pair<DownwardToWlplanAtomMapper, planning::Problem>
 construct_wlplan_problem(
-    const planning::Domain &domain,
-    const std::map<FactPair, PredArgsString> &mapper,
+    planning::Domain &domain, const std::map<FactPair, PredArgsString> &mapper,
     const TaskProxy &task_proxy);
 
 } // namespace features

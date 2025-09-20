@@ -84,15 +84,25 @@ std::map<FactPair, PredArgsString> get_fd_fact_to_pred_args_map(
 std::pair<
     std::map<FactPair, std::shared_ptr<planning::Atom>>, planning::Problem>
 construct_wlplan_problem(
-    const planning::Domain &domain,
-    const std::map<FactPair, PredArgsString> &mapper,
+    planning::Domain &domain, const std::map<FactPair, PredArgsString> &mapper,
     const TaskProxy &task_proxy) {
     std::map<FactPair, std::shared_ptr<planning::Atom>> fd_fact_to_wlplan_atom;
 
     std::unordered_map<std::string, planning::Predicate> name_to_predicate;
+    std::unordered_map<std::string, std::string> name_to_object;
+
+    int i = 0;
+    std::vector<planning::Predicate> predicates_i;
     for (const auto &pred : domain.predicates) {
-        name_to_predicate[pred.name] = pred;
+        planning::Predicate pred_i =
+            planning::Predicate(std::to_string(i), pred.arity);
+        name_to_predicate[pred.name] = pred_i;
+        predicates_i.push_back(pred_i);
+        i++;
     }
+    domain = planning::Domain(
+        domain.name, predicates_i, domain.functions, domain.schemata,
+        domain.constant_objects);
 
     std::unordered_set<planning::Object> objects;
 
@@ -100,14 +110,19 @@ construct_wlplan_problem(
     for (auto &[fact_pair, pred_args] : mapper) {
         std::string predicate_name = pred_args.first;
         std::vector<planning::Object> args = pred_args.second;
+        std::vector<planning::Object> args_i;
 
         for (planning::Object arg : args) {
-            objects.insert(arg);
+            if (name_to_object.count(arg) == 0) {
+                name_to_object[arg] = std::to_string(name_to_object.size());
+                objects.insert(name_to_object.at(arg));
+            }
+            args_i.push_back(name_to_object.at(arg));
         }
 
         if (name_to_predicate.count(predicate_name)) {
             planning::Atom wlplan_atom =
-                planning::Atom(name_to_predicate.at(predicate_name), args);
+                planning::Atom(name_to_predicate.at(predicate_name), args_i);
             fd_fact_to_wlplan_atom.insert(
                 {fact_pair, std::make_shared<planning::Atom>(wlplan_atom)});
         }
@@ -135,7 +150,10 @@ construct_wlplan_problem(
         std::pair<std::string, std::vector<std::string>> pred_args =
             fd_fact_to_pred_args(pddl_fact_name);
         std::string predicate_name = pred_args.first;
-        std::vector<planning::Object> args = pred_args.second;
+        std::vector<planning::Object> args;
+        for (const auto &arg : pred_args.second) {
+            args.push_back(name_to_object.at(arg));
+        }
         planning::Atom atom =
             planning::Atom(name_to_predicate.at(predicate_name), args);
 
@@ -204,7 +222,7 @@ WLFGenerator::WLFGenerator(
     model = load_feature_generator(model_file);
 
     /* Get domain from model */
-    const planning::Domain domain = *(model->get_domain());
+    planning::Domain domain = *(model->get_domain());
     const std::map<FactPair, PredArgsString> &helper =
         get_fd_fact_to_pred_args_map(transform);
 
