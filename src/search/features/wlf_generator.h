@@ -16,6 +16,8 @@
 #include <utility>
 #include <vector>
 
+using namespace wlplan;
+
 namespace features {
 
 using PredArgsString =
