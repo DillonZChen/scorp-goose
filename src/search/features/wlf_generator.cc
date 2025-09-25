@@ -174,7 +174,8 @@ construct_wlplan_problem(
 
 WLFGenerator::WLFGenerator(
     const std::shared_ptr<AbstractTask> transform, int wl_iterations,
-    const std::string &graph_representation, const std::string &wl_algorithm)
+    const std::string &graph_representation, const std::string &wl_algorithm,
+    const bool multiset_hash)
     : FeatureGenerator(transform) {
     /* Construct domain */
     std::map<FactPair, PredArgsString> helper =
@@ -199,13 +200,13 @@ WLFGenerator::WLFGenerator(
     /* Initialise feature generator */
     if (wl_algorithm == "wl") {
         model = std::make_shared<feature_generator::WLFeatures>(
-            domain, graph_representation, wl_iterations, "none", true);
+            domain, graph_representation, wl_iterations, "none", multiset_hash);
     } else if (wl_algorithm == "lwl2") {
         model = std::make_shared<feature_generator::LWL2Features>(
-            domain, graph_representation, wl_iterations, "none", true);
+            domain, graph_representation, wl_iterations, "none", multiset_hash);
     } else if (wl_algorithm == "iwl") {
         model = std::make_shared<feature_generator::IWLFeatures>(
-            domain, graph_representation, wl_iterations, "none", true);
+            domain, graph_representation, wl_iterations, "none", multiset_hash);
     } else {
         std::cerr << "Unknown WL algorithm: " << wl_algorithm << std::endl;
         exit(1);
@@ -277,6 +278,7 @@ public:
         add_option<int>("l", "Number of wl iterations", "2");
         add_option<std::string>("g", "Graph representation", "\"ilg\"");
         add_option<std::string>("w", "WL algorithm", "\"wl\"");
+        add_option<bool>("mset", "Use multi-set hash", "false");
         add_feature_generator_options_to_feature(*this, "wlfgen");
 
         document_language_support("action costs", "ignored by design");
@@ -289,7 +291,7 @@ public:
         return plugins::make_shared_from_arg_tuples<WLFGenerator>(
             opts.get<std::shared_ptr<AbstractTask>>("transform"),
             opts.get<int>("l"), opts.get<std::string>("g"),
-            opts.get<std::string>("w"));
+            opts.get<std::string>("w"), opts.get<bool>("mset"));
     }
 };
 

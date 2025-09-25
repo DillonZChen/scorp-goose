@@ -34,7 +34,7 @@ public:
     WLFGenerator(
         const std::shared_ptr<AbstractTask> transform, int wl_iterations,
         const std::string &graph_representation,
-        const std::string &wl_algorithm);
+        const std::string &wl_algorithm, const bool multiset_hash);
 
     WLFGenerator(
         const std::shared_ptr<AbstractTask> transform,
