@@ -1,6 +1,8 @@
 #ifndef FEATURES_WLF_GENERATOR_H
 #define FEATURES_WLF_GENERATOR_H
 
+#include "feature_utils.h"
+
 #include "../feature_generator.h"
 #include "../task_proxy.h"
 
@@ -20,8 +22,6 @@ using namespace wlplan;
 
 namespace features {
 
-using PredArgsString =
-    typename std::pair<std::string, std::vector<std::string>>;
 using DownwardToWlplanAtomMapper =
     typename std::map<FactPair, std::shared_ptr<planning::Atom>>;
 
@@ -48,12 +48,6 @@ public:
 
     double predict(const State &state) const;
 };
-
-PredArgsString fd_fact_to_pred_args(std::string &name);
-std::pair<std::string, bool> get_pddl_fact(FactProxy fact);
-
-std::map<FactPair, PredArgsString> get_fd_fact_to_pred_args_map(
-    const std::shared_ptr<AbstractTask> task);
 
 std::pair<DownwardToWlplanAtomMapper, planning::Problem>
 construct_wlplan_problem(

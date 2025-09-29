@@ -45,6 +45,11 @@ report_bitwidth()
 set_up_build_types("Debug;Release")
 set_up_options()
 
+find_package(pybind11 CONFIG REQUIRED)
+find_package(Python COMPONENTS Interpreter Development REQUIRED)
+set(PYBIND11_EMBED_TARGET pybind11::embed)
+add_compile_options(-fvisibility=hidden)
+
 # Add wlplan
 list(APPEND CMAKE_PREFIX_PATH "ext/wlplan")
 find_package(wlplan REQUIRED)
@@ -52,6 +57,7 @@ find_package(wlplan REQUIRED)
 project(downward LANGUAGES CXX)
 add_executable(downward planner.cc)
 
+target_link_libraries(downward PRIVATE pybind11::embed Python::Python)
 target_link_libraries(downward PRIVATE wlplan)
 
 # obtain git SHA1 hash
@@ -1142,6 +1148,8 @@ create_fast_downward_library(
     HELP "State based features"
     SOURCES
         feature_generator
+        features/feature_utils
+        features/dlf_generator
         features/wlf_generator
         features/atom_generator
     DEPENDENCY_ONLY

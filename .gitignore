@@ -8,3 +8,4 @@ __pycache__/
 /misc/.tox/
 /misc/autodoc/downward-xmlrpc.secret
 /src/search/ext/wlplan
+/src/search/ext/dlplan
