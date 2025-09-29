@@ -18,40 +18,22 @@ construct_wlplan_problem(
     std::map<FactPair, std::shared_ptr<planning::Atom>> fd_fact_to_wlplan_atom;
 
     std::unordered_map<std::string, planning::Predicate> name_to_predicate;
-    std::unordered_map<std::string, std::string> name_to_object;
 
-    int i = 0;
-    std::vector<planning::Predicate> predicates_i;
     for (const auto &pred : domain.predicates) {
-        planning::Predicate pred_i =
-            planning::Predicate(std::to_string(i), pred.arity);
-        name_to_predicate[pred.name] = pred_i;
-        predicates_i.push_back(pred_i);
-        i++;
+        name_to_predicate[pred.name] = pred;
     }
-    domain = planning::Domain(
-        domain.name, predicates_i, domain.functions, domain.schemata,
-        domain.constant_objects);
 
     std::unordered_set<planning::Object> objects;
 
     // Preprocess Downward's FDR var-val pairs and map to WLPlan atoms.
     for (auto &[fact_pair, pred_args] : mapper) {
         std::string predicate_name = pred_args.first;
-        std::vector<planning::Object> args = pred_args.second;
-        std::vector<planning::Object> args_i;
-
-        for (planning::Object arg : args) {
-            if (name_to_object.count(arg) == 0) {
-                name_to_object[arg] = std::to_string(name_to_object.size());
-                objects.insert(name_to_object.at(arg));
-            }
-            args_i.push_back(name_to_object.at(arg));
+        for (const std::string &obj : pred_args.second) {
+            objects.insert(obj);
         }
-
         if (name_to_predicate.count(predicate_name)) {
-            planning::Atom wlplan_atom =
-                planning::Atom(name_to_predicate.at(predicate_name), args_i);
+            planning::Atom wlplan_atom = planning::Atom(
+                name_to_predicate.at(predicate_name), pred_args.second);
             fd_fact_to_wlplan_atom.insert(
                 {fact_pair, std::make_shared<planning::Atom>(wlplan_atom)});
         }
@@ -78,13 +60,8 @@ construct_wlplan_problem(
 
         std::pair<std::string, std::vector<std::string>> pred_args =
             fd_fact_to_pred_args(pddl_fact_name);
-        std::string predicate_name = pred_args.first;
-        std::vector<planning::Object> args;
-        for (const auto &arg : pred_args.second) {
-            args.push_back(name_to_object.at(arg));
-        }
-        planning::Atom atom =
-            planning::Atom(name_to_predicate.at(predicate_name), args);
+        planning::Atom atom = planning::Atom(
+            name_to_predicate.at(pred_args.first), pred_args.second);
 
         if (positive) {
             positive_goals.push_back(atom);
