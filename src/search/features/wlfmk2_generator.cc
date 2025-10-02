@@ -13,24 +13,22 @@ namespace features {
 WLFmk2Generator::WLFmk2Generator(
     const std::shared_ptr<AbstractTask> transform, int wl_iterations)
     : FeatureGenerator(transform), wl_iterations(wl_iterations) {
-    std::map<FactPair, PredArgsString> mapper =
-        get_fd_fact_to_pred_args_map(transform);
-
     std::unordered_map<std::string, int> objects;
     std::unordered_map<std::string, int> predicates;
 
     int max_var = -1;
     int max_val = -1;
-    for (const auto &[fact_pair, pred_args] : mapper) {
-        // scrape predicates
-        if (!predicates.count(pred_args.first)) {
-            predicates[pred_args.first] = (int)predicates.size();
-        }
-        // scrape objects
-        for (const std::string &obj : pred_args.second) {
-            if (!objects.count(obj)) {
-                objects[obj] = (int)objects.size();
-            }
+    FactsProxy facts(*transform);
+    std::map<FactPair, PredArgsString> mapper;
+    for (const auto &fact : facts) {
+        std::pair<std::string, bool> pddl_fact_info = get_pddl_fact(fact);
+        std::string pddl_fact_name = pddl_fact_info.first;
+        bool positive = pddl_fact_info.second;
+        FactPair fact_pair = fact.get_pair();
+        if (!positive || pddl_fact_name.empty()) {
+            mapper[fact_pair] = {"--bad--", {}};
+        } else {
+            mapper[fact_pair] = fd_fact_to_pred_args(pddl_fact_name);
         }
         // scrape number of atoms
         if (fact_pair.var > max_var) {
@@ -41,13 +39,36 @@ WLFmk2Generator::WLFmk2Generator(
         }
     }
 
-    n_objects = (int)objects.size();
     connected_objects.resize(max_var + 1);
     colour.resize(max_var + 1);
+    skip.resize(max_var + 1);
     for (int var = 0; var <= max_var; ++var) {
         connected_objects[var].resize(max_val + 1);
         colour[var].resize(max_val + 1, -1);
+        skip[var].resize(max_val + 1, false);
     }
+
+    max_arity = 0;
+    for (const auto &[fact_pair, pred_args] : mapper) {
+        // scrape predicates
+        std::string predicate_name = pred_args.first;
+        if (predicate_name == "--bad--") {
+            skip[fact_pair.var][fact_pair.value] = true;
+            continue;
+        }
+        if (!predicates.count(predicate_name)) {
+            predicates[predicate_name] = (int)predicates.size();
+        }
+        max_arity = std::max(max_arity, (int)pred_args.second.size());
+        // scrape objects
+        for (const std::string &obj : pred_args.second) {
+            if (!objects.count(obj)) {
+                objects[obj] = (int)objects.size();
+            }
+        }
+    }
+
+    n_objects = (int)objects.size();
 
     // scrape goals
     int var, val, predicate;
@@ -67,16 +88,20 @@ WLFmk2Generator::WLFmk2Generator(
             fd_fact_to_pred_args(pddl_fact_name);
         predicate = predicates.at(pred_args.first);
         if (positive) {
-            goal_colour[{var, val}] = 1 + predicate * 5 + 1;
-            pos_goal_set.insert({var, val});
+            goal_colour[pair] = 1 + predicate * 5 + 1;
+            pos_goal_set.insert(pair);
         } else {
-            goal_colour[{var, val}] = 1 + predicate * 5 + 3;
-            neg_goal_set.insert({var, val});
+            goal_colour[pair] = 1 + predicate * 5 + 3;
+            neg_goal_set.insert(pair);
         }
     }
 
     // scrape ground atoms
     for (auto &[fact_pair, pred_args] : mapper) {
+        std::string predicate_name = pred_args.first;
+        if (predicate_name == "--bad--") {
+            continue;
+        }
         var = fact_pair.var;
         val = fact_pair.value;
 
@@ -85,7 +110,7 @@ WLFmk2Generator::WLFmk2Generator(
         for (const std::string &obj : pred_args.second) {
             atom_objects.push_back(objects.at(obj));
         }
-        connected_objects[fact_pair.var][fact_pair.value] = atom_objects;
+        connected_objects[var][val] = atom_objects;
 
         // get colour
         predicate = predicates.at(pred_args.first);
@@ -101,87 +126,101 @@ WLFmk2Generator::WLFmk2Generator(
 
 WLFmk2Generator::~WLFmk2Generator() {
     // Destructor
-    std::cout << "WL features collected: TODO" << std::endl;
+    std::cout << "WL features collected: " << hash.size() << std::endl;
 }
 
 Generator<StateFeature> WLFmk2Generator::compute_features(const State &state) {
     std::map<int, int> features;
 
-    // init graph
+    // --- Graph Initialization ---
     std::vector<int> obj_colours = std::vector<int>(n_objects, 0);
-    std::map<std::pair<int, int>, int> atom_colours;
+    std::unordered_map<std::pair<int, int>, int, wlf_mk2_pair_hash>
+        atom_colours;
     int var, val, col;
-    std::pair<int, int> pair;
+
     // copy goal_colour
+    std::pair<int, int> pair;
     for (FactProxy fact : state) {
         pair = fact.get_int_pair();
-        var = pair.first;
-        val = pair.second;
-        atom_colours[pair] = colour[var][val];
+        if (skip[pair.first][pair.second]) {
+            continue;
+        }
+        atom_colours[pair] = colour[pair.first][pair.second];
     }
     for (const auto &[pair, c] : goal_colour) {
-        if (!atom_colours.count(pair)) {
-            atom_colours[pair] = c;
-        }
+        atom_colours.try_emplace(pair, c);
     }
 
-    // to be faithful to wlplan implementation, collect initial colours
+    // --- Initial Feature Collection ---
     features[0] = n_objects;
-    for (const auto &entry : atom_colours) {
-        col = entry.second;
-        features.try_emplace(col, 0);
-        features[col] += 1;
+    hash[{0, 0}] = 0;
+    for (const auto &[pair, color] : atom_colours) {
+        hash.try_emplace({color, 0}, (int)hash.size());
+        col = hash[{color, 0}];
+        features[col]++;
+        atom_colours[pair] = col;
     }
 
-    // main wl loop
-    for (int iteration = 0; iteration < wl_iterations; iteration++) {
-        std::map<std::pair<int, int>, int> new_atom_colours;
-        std::vector<std::vector<int>> new_obj_colours_long =
-            std::vector<std::vector<int>>(n_objects);
-        std::vector<int> new_obj_colours(n_objects, 0);
+    // --- Main WL Loop ---
+    std::unordered_map<std::pair<int, int>, int, wlf_mk2_pair_hash>
+        new_atom_colours;
+    std::vector<std::vector<int>> object_neighbours(n_objects);
+    std::vector<int> new_obj_colours(n_objects);
+    std::vector<int> atom_neighbours;
+    int n, obj;
 
+    for (int iteration = 1; iteration < wl_iterations + 1; iteration++) {
+        new_atom_colours.clear();
+        for (int i = 0; i < n_objects; i++) {
+            object_neighbours[i].clear();
+        }
+
+        // --- Atom Color Update ---
         for (const auto &[pair, c] : atom_colours) {
             var = pair.first;
             val = pair.second;
-            std::vector<int> neigh_colours;
-            for (int obj : connected_objects[var][val]) {
-                neigh_colours.push_back(obj_colours[obj]);
-                new_obj_colours_long[obj].push_back(c);
+            n = connected_objects[var][val].size();
+            atom_neighbours.clear();
+            atom_neighbours.reserve(n);
+            for (int i = 0; i < n; i++) {
+                obj = connected_objects[var][val][i];
+                atom_neighbours.push_back(obj_colours[obj] * max_arity + i);
+                object_neighbours[obj].push_back(c * max_arity + i);
             }
             // sort neighbours then add own colour
-            std::sort(neigh_colours.begin(), neigh_colours.end());
-            neigh_colours.push_back(c);
+            std::sort(atom_neighbours.begin(), atom_neighbours.end());
+            atom_neighbours.push_back(c);
+            atom_neighbours.push_back(iteration);
 
-            col = get_hash_colour(neigh_colours);
+            hash.try_emplace(atom_neighbours, (int)hash.size());
+            col = hash[atom_neighbours];
+
             new_atom_colours[pair] = col;
-            features.try_emplace(col, 0);
-            features[col] += 1;
+            features[col]++; // fine if col does not exist in features in cpp
         }
+
+        // --- Object Color Update ---
         for (int obj = 0; obj < n_objects; obj++) {
             // sort neighbours then add own colour
             std::sort(
-                new_obj_colours_long[obj].begin(),
-                new_obj_colours_long[obj].end());
-            new_obj_colours_long[obj].push_back(obj_colours[obj]);
+                object_neighbours[obj].begin(), object_neighbours[obj].end());
+            object_neighbours[obj].push_back(obj_colours[obj]);
+            object_neighbours[obj].push_back(iteration);
 
-            col = get_hash_colour(new_obj_colours_long[obj]);
+            hash.try_emplace(object_neighbours[obj], (int)hash.size());
+            col = hash[object_neighbours[obj]];
+
             new_obj_colours[obj] = col;
-            features.try_emplace(col, 0);
-            features[col] += 1;
+            features[col]++; // fine if col does not exist in features in cpp
         }
 
-        atom_colours = new_atom_colours;
-        obj_colours = new_obj_colours;
+        atom_colours = std::move(new_atom_colours);
+        obj_colours = std::move(new_obj_colours);
     }
 
     for (const auto &[f, count] : features) {
         co_yield std::make_pair(f, count);
     }
-}
-
-int WLFmk2Generator::get_hash_colour(const std::vector<int> &colours) {
-    hash.try_emplace(colours, (int)hash.size());
-    return hash[colours];
 }
 
 class WLFmk2GeneratorFeature
