@@ -9,8 +9,27 @@ Fact = tuple[str, list[str]]  # (predicate, [arg1, arg2, ...])
 
 class DLFGenerator:
     def __init__(
-        self, predicates: set[tuple[str, int]], facts: list[Fact], goals: list[Fact]
+        self,
+        predicates: set[tuple[str, int]],
+        facts: list[Fact],
+        goals: list[Fact],
+        concept_complexity_limit: int,
+        role_complexity_limit: int,
+        boolean_complexity_limit: int,
+        count_numerical_complexity_limit: int,
+        distance_numerical_complexity_limit: int,
     ):
+        self.concept_complexity_limit = concept_complexity_limit
+        self.role_complexity_limit = role_complexity_limit
+        self.boolean_complexity_limit = boolean_complexity_limit
+        self.count_numerical_complexity_limit = count_numerical_complexity_limit
+        self.distance_numerical_complexity_limit = distance_numerical_complexity_limit
+        print(f"{self.concept_complexity_limit=}")
+        print(f"{self.role_complexity_limit=}")
+        print(f"{self.boolean_complexity_limit=}")
+        print(f"{self.count_numerical_complexity_limit=}")
+        print(f"{self.distance_numerical_complexity_limit=}", flush=True)
+
         self.vocabulary = VocabularyInfo()
         for predicate, arity in predicates:
             self.vocabulary.add_predicate(predicate, arity)
@@ -88,11 +107,11 @@ class DLFGenerator:
             ) = generate_features(
                 factory=self.factory,
                 states=[state],
-                concept_complexity_limit=5,
-                role_complexity_limit=5,
-                boolean_complexity_limit=10,
-                count_numerical_complexity_limit=10,
-                distance_numerical_complexity_limit=0,
+                concept_complexity_limit=self.concept_complexity_limit,
+                role_complexity_limit=self.role_complexity_limit,
+                boolean_complexity_limit=self.boolean_complexity_limit,
+                count_numerical_complexity_limit=self.count_numerical_complexity_limit,
+                distance_numerical_complexity_limit=self.distance_numerical_complexity_limit,
             )
 
         for f in generated_booleans:

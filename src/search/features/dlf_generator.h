@@ -25,8 +25,16 @@ private:
 
     std::map<FactPair, int> fact_to_i;
 
+    int concept_complexity_limit;
+    int role_complexity_limit;
+    int boolean_complexity_limit;
+    int count_numerical_complexity_limit;
+    int distance_numerical_complexity_limit;
+
 public:
-    DLFGenerator(const std::shared_ptr<AbstractTask> transform);
+    DLFGenerator(
+        const std::shared_ptr<AbstractTask> transform, int concept_c,
+        int role_c, int boolean_c, int count_c, int distance_c);
     ~DLFGenerator();
 
     Generator<StateFeature> compute_features(const State &state);
