@@ -157,8 +157,8 @@ Generator<StateFeature> WLFmk2Generator::compute_features(const State &state) {
     std::unordered_map<std::pair<int, int>, int, wlf_mk2_pair_hash>
         new_atom_colours;
     std::vector<std::vector<int>> object_neighbours(n_objects);
-    std::vector<int> new_obj_colours(n_objects);
     std::vector<int> atom_neighbours;
+    std::vector<int> new_obj_colours(n_objects);
     int n, obj;
 
     for (int iteration = 1; iteration < wl_iterations + 1; iteration++) {
@@ -187,26 +187,27 @@ Generator<StateFeature> WLFmk2Generator::compute_features(const State &state) {
             col = hash[atom_neighbours];
 
             new_atom_colours[pair] = col;
-            features[col]++; // fine if col does not exist in features in cpp
+            features.try_emplace(col, 0);
+            features[col]++;
         }
 
         // --- Object Color Update ---
-        for (int obj = 0; obj < n_objects; obj++) {
+        for (int i = 0; i < n_objects; i++) {
             // sort neighbours then add own colour
-            std::sort(
-                object_neighbours[obj].begin(), object_neighbours[obj].end());
-            object_neighbours[obj].push_back(obj_colours[obj]);
-            object_neighbours[obj].push_back(iteration);
+            std::sort(object_neighbours[i].begin(), object_neighbours[i].end());
+            object_neighbours[i].push_back(obj_colours[i]);
+            object_neighbours[i].push_back(iteration);
 
-            hash.try_emplace(object_neighbours[obj], (int)hash.size());
-            col = hash[object_neighbours[obj]];
+            hash.try_emplace(object_neighbours[i], (int)hash.size());
+            col = hash[object_neighbours[i]];
 
-            new_obj_colours[obj] = col;
-            features[col]++; // fine if col does not exist in features in cpp
+            new_obj_colours[i] = col;
+            features.try_emplace(col, 0);
+            features[col]++;
         }
 
         atom_colours = std::move(new_atom_colours);
-        obj_colours = std::move(new_obj_colours);
+        std::swap(obj_colours, new_obj_colours);
     }
 
     for (const auto &[f, count] : features) {
