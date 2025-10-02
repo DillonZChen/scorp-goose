@@ -47,16 +47,17 @@ namespace features {
 class WLFmk2Generator : public FeatureGenerator {
 protected:
     const int wl_iterations;
-    int max_arity;
-
-    std::vector<std::vector<bool>> skip;
+    int max_arity, n_vars, n_vals;
 
     // a Fast Downward (var, val) pair maps to a list of object indices
     int n_objects;
-    std::vector<std::vector<std::vector<int>>> connected_objects;
+    std::vector<std::vector<int>> connected_objects;
 
     // the colour of a (var, val) if it is seen in a state
-    std::vector<std::vector<int>> colour;
+    std::vector<int> colour;
+
+    // useless (var, val) pair
+    std::vector<bool> skip;
 
     // nodes that always exist because they are in goal, and their colour
     std::unordered_map<std::pair<int, int>, int, wlf_mk2_pair_hash> goal_colour;

@@ -15,9 +15,10 @@ WLFmk2Generator::WLFmk2Generator(
     : FeatureGenerator(transform), wl_iterations(wl_iterations) {
     std::unordered_map<std::string, int> objects;
     std::unordered_map<std::string, int> predicates;
+    n_vars = 0;
+    n_vals = 0;
+    max_arity = 0;
 
-    int max_var = -1;
-    int max_val = -1;
     FactsProxy facts(*transform);
     std::map<FactPair, PredArgsString> mapper;
     for (const auto &fact : facts) {
@@ -31,29 +32,22 @@ WLFmk2Generator::WLFmk2Generator(
             mapper[fact_pair] = fd_fact_to_pred_args(pddl_fact_name);
         }
         // scrape number of atoms
-        if (fact_pair.var > max_var) {
-            max_var = fact_pair.var;
-        }
-        if (fact_pair.value > max_val) {
-            max_val = fact_pair.value;
-        }
+        n_vars = std::max(n_vars, fact_pair.var);
+        n_vals = std::max(n_vals, fact_pair.value);
     }
 
-    connected_objects.resize(max_var + 1);
-    colour.resize(max_var + 1);
-    skip.resize(max_var + 1);
-    for (int var = 0; var <= max_var; ++var) {
-        connected_objects[var].resize(max_val + 1);
-        colour[var].resize(max_val + 1, -1);
-        skip[var].resize(max_val + 1, false);
-    }
+    n_vars += 1;
+    n_vals += 1;
+    int n_facts = n_vars * n_vals;
+    connected_objects.resize(n_facts);
+    colour.resize(n_facts);
+    skip.resize(n_facts);
 
-    max_arity = 0;
     for (const auto &[fact_pair, pred_args] : mapper) {
         // scrape predicates
         std::string predicate_name = pred_args.first;
         if (predicate_name == "--bad--") {
-            skip[fact_pair.var][fact_pair.value] = true;
+            skip[fact_pair.var * n_vals + fact_pair.value] = true;
             continue;
         }
         if (!predicates.count(predicate_name)) {
@@ -76,8 +70,6 @@ WLFmk2Generator::WLFmk2Generator(
     std::set<std::pair<int, int>> neg_goal_set;
     for (FactProxy goal : task_proxy.get_goals()) {
         std::pair<int, int> pair = goal.get_int_pair();
-        var = pair.first;
-        val = pair.second;
         std::pair<std::string, bool> pddl_fact_info = get_pddl_fact(goal);
         std::string pddl_fact_name = pddl_fact_info.first;
         bool positive = pddl_fact_info.second;
@@ -110,16 +102,16 @@ WLFmk2Generator::WLFmk2Generator(
         for (const std::string &obj : pred_args.second) {
             atom_objects.push_back(objects.at(obj));
         }
-        connected_objects[var][val] = atom_objects;
+        connected_objects[var * n_vals + val] = atom_objects;
 
         // get colour
         predicate = predicates.at(pred_args.first);
         if (pos_goal_set.count({var, val})) {
-            colour[var][val] = 1 + predicate * 5 + 0;
+            colour[var * n_vals + val] = 1 + predicate * 5 + 0;
         } else if (neg_goal_set.count({var, val})) {
-            colour[var][val] = 1 + predicate * 5 + 2;
+            colour[var * n_vals + val] = 1 + predicate * 5 + 2;
         } else {
-            colour[var][val] = 1 + predicate * 5 + 4;
+            colour[var * n_vals + val] = 1 + predicate * 5 + 4;
         }
     }
 }
@@ -130,22 +122,22 @@ WLFmk2Generator::~WLFmk2Generator() {
 }
 
 Generator<StateFeature> WLFmk2Generator::compute_features(const State &state) {
-    std::map<int, int> features;
+    std::unordered_map<int, int> features;
 
     // --- Graph Initialization ---
     std::vector<int> obj_colours = std::vector<int>(n_objects, 0);
     std::unordered_map<std::pair<int, int>, int, wlf_mk2_pair_hash>
         atom_colours;
-    int var, val, col;
+    int col, fact_i;
 
     // copy goal_colour
     std::pair<int, int> pair;
     for (FactProxy fact : state) {
         pair = fact.get_int_pair();
-        if (skip[pair.first][pair.second]) {
-            continue;
+        fact_i = pair.first * n_vals + pair.second;
+        if (!skip[fact_i]) {
+            atom_colours[pair] = colour[fact_i];
         }
-        atom_colours[pair] = colour[pair.first][pair.second];
     }
     for (const auto &[pair, c] : goal_colour) {
         atom_colours.try_emplace(pair, c);
@@ -177,13 +169,12 @@ Generator<StateFeature> WLFmk2Generator::compute_features(const State &state) {
 
         // --- Atom Color Update ---
         for (const auto &[pair, c] : atom_colours) {
-            var = pair.first;
-            val = pair.second;
-            n = connected_objects[var][val].size();
+            fact_i = pair.first * n_vals + pair.second;
+            n = connected_objects[fact_i].size();
             atom_neighbours.clear();
-            atom_neighbours.reserve(n);
+            atom_neighbours.reserve(n + 2);
             for (int i = 0; i < n; i++) {
-                obj = connected_objects[var][val][i];
+                obj = connected_objects[fact_i][i];
                 atom_neighbours.push_back(obj_colours[obj] * max_arity + i);
                 object_neighbours[obj].push_back(c * max_arity + i);
             }
