@@ -49,9 +49,12 @@ protected:
     const int wl_iterations;
     int max_arity, n_vars, n_vals;
 
-    // a Fast Downward (var, val) pair maps to a list of object indices
     int n_objects;
-    std::vector<std::vector<int>> connected_objects;
+    // flat mapping where connected_objects[ci[i], ..., ci[i + arity[i]]] are
+    // objects connected to atom i
+    std::vector<int> connected_objects;
+    std::vector<int> arity;
+    std::vector<int> ci; // index into connected_objects
 
     // the colour of a (var, val) if it is seen in a state
     std::vector<int> colour;
@@ -60,7 +63,7 @@ protected:
     std::vector<bool> skip;
 
     // nodes that always exist because they are in goal, and their colour
-    std::unordered_map<std::pair<int, int>, int, wlf_mk2_pair_hash> goal_colour;
+    std::unordered_map<int, int> goal_colour;
 
     // hash per iteration
     std::unordered_map<std::vector<int>, int, wlf_mk2_int_vector_hasher> hash;

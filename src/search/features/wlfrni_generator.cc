@@ -1,11 +1,10 @@
-#include "wlfmk2_generator.h"
+#include "wlfrni_generator.h"
 
 #include "../task_proxy.h"
 
 namespace features {
 
-WLFmk2Generator::WLFmk2Generator(
-    const std::shared_ptr<AbstractTask> transform, int wl_iterations)
+WLFRNI::WLFRNI(const std::shared_ptr<AbstractTask> transform, int wl_iterations)
     : FeatureGenerator(transform), wl_iterations(wl_iterations) {
     std::unordered_map<std::string, int> objects;
     std::unordered_map<std::string, int> predicates;
@@ -33,7 +32,7 @@ WLFmk2Generator::WLFmk2Generator(
     n_vars += 1;
     n_vals += 1;
     int n_facts = n_vars * n_vals;
-    ci.resize(n_facts);
+    connected_objects.resize(n_facts);
     colour.resize(n_facts);
     skip.resize(n_facts);
 
@@ -59,12 +58,11 @@ WLFmk2Generator::WLFmk2Generator(
     n_objects = (int)objects.size();
 
     // scrape goals
-    int predicate, fact_i;
-    std::set<int> pos_goal_set;
-    std::set<int> neg_goal_set;
+    int var, val, predicate;
+    std::set<std::pair<int, int>> pos_goal_set;
+    std::set<std::pair<int, int>> neg_goal_set;
     for (FactProxy goal : task_proxy.get_goals()) {
         std::pair<int, int> pair = goal.get_int_pair();
-        fact_i = pair.first * n_vals + pair.second;
         std::pair<std::string, bool> pddl_fact_info = get_pddl_fact(goal);
         std::string pddl_fact_name = pddl_fact_info.first;
         bool positive = pddl_fact_info.second;
@@ -75,103 +73,86 @@ WLFmk2Generator::WLFmk2Generator(
             fd_fact_to_pred_args(pddl_fact_name);
         predicate = predicates.at(pred_args.first);
         if (positive) {
-            goal_colour[fact_i] = 1 + predicate * 5 + 1;
-            pos_goal_set.insert(fact_i);
+            goal_colour[pair] = 1 + predicate * 5 + 1;
+            pos_goal_set.insert(pair);
         } else {
-            goal_colour[fact_i] = 1 + predicate * 5 + 3;
-            neg_goal_set.insert(fact_i);
+            goal_colour[pair] = 1 + predicate * 5 + 3;
+            neg_goal_set.insert(pair);
         }
     }
 
     // scrape ground atoms
-    int limer = 0;
-    std::map<int, std::vector<int>> sorted_connected_objects;
     for (auto &[fact_pair, pred_args] : mapper) {
         std::string predicate_name = pred_args.first;
         if (predicate_name == "--bad--") {
             continue;
         }
-        fact_i = fact_pair.var * n_vals + fact_pair.value;
+        var = fact_pair.var;
+        val = fact_pair.value;
 
         // get edges
         std::vector<int> atom_objects;
         for (const std::string &obj : pred_args.second) {
             atom_objects.push_back(objects.at(obj));
         }
-        sorted_connected_objects[fact_i] = atom_objects;
-        limer += (int)atom_objects.size();
+        connected_objects[var * n_vals + val] = atom_objects;
 
         // get colour
         predicate = predicates.at(pred_args.first);
-        if (pos_goal_set.count(fact_i)) {
-            colour[fact_i] = 1 + predicate * 5 + 0;
-        } else if (neg_goal_set.count(fact_i)) {
-            colour[fact_i] = 1 + predicate * 5 + 2;
+        if (pos_goal_set.count({var, val})) {
+            colour[var * n_vals + val] = 1 + predicate * 5 + 0;
+        } else if (neg_goal_set.count({var, val})) {
+            colour[var * n_vals + val] = 1 + predicate * 5 + 2;
         } else {
-            colour[fact_i] = 1 + predicate * 5 + 4;
+            colour[var * n_vals + val] = 1 + predicate * 5 + 4;
         }
     }
-
-    // flatten connected_objects
-    int count = 0;
-    connected_objects.clear();
-    connected_objects.reserve(limer);
-    arity.clear();
-    arity.reserve(n_facts);
-    for (int i = 0; i < n_facts; i++) {
-        ci[i] = count;
-        if (sorted_connected_objects.count(i)) {
-            for (int obj : sorted_connected_objects[i]) {
-                connected_objects.push_back(obj);
-                count++;
-            }
-            arity.push_back((int)sorted_connected_objects[i].size());
-        } else {
-            arity.push_back(0);
-        }
-    }
-
-    // necessary for objects
-    hash[{0, 0}] = 0;
 }
 
-WLFmk2Generator::~WLFmk2Generator() {
+WLFRNI::~WLFRNI() {
     // Destructor
     std::cout << "WL features collected: " << hash.size() << std::endl;
 }
 
-Generator<StateFeature> WLFmk2Generator::compute_features(const State &state) {
+Generator<StateFeature> WLFRNI::compute_features(const State &state) {
     std::unordered_map<int, int> features;
+    int col, fact_i;
 
     // --- Graph Initialization ---
     std::vector<int> obj_colours = std::vector<int>(n_objects, 0);
-    std::unordered_map<int, int> atom_colours;
-    int col, fact_i;
-    std::pair<int, int> pair;
+    std::unordered_map<std::pair<int, int>, int, wlf_mk2_pair_hash>
+        atom_colours;
+    for (int i = 0; i < n_objects; i++) {
+        col = -i;
+        obj_colours[i] = col;
+        features[col] = 1;
+        hash[{col, 0}] = col;
+    }
 
     // copy goal_colour
+    std::pair<int, int> pair;
     for (FactProxy fact : state) {
         pair = fact.get_int_pair();
         fact_i = pair.first * n_vals + pair.second;
         if (!skip[fact_i]) {
-            atom_colours[fact_i] = colour[fact_i];
+            atom_colours[pair] = colour[fact_i];
         }
     }
-    for (const auto &[i, c] : goal_colour) {
-        atom_colours.try_emplace(i, c);
+    for (const auto &[pair, c] : goal_colour) {
+        atom_colours.try_emplace(pair, c);
     }
 
     // --- Initial Feature Collection ---
-    features[0] = n_objects;
-    for (const auto &[i, color] : atom_colours) {
+    for (const auto &[pair, color] : atom_colours) {
         hash.try_emplace({color, 0}, (int)hash.size());
         col = hash[{color, 0}];
         features[col]++;
-        atom_colours[i] = col;
+        atom_colours[pair] = col;
     }
 
     // --- Main WL Loop ---
-    std::unordered_map<int, int> new_atom_colours;
+    std::unordered_map<std::pair<int, int>, int, wlf_mk2_pair_hash>
+        new_atom_colours;
     std::vector<std::vector<int>> object_neighbours(n_objects);
     std::vector<int> atom_neighbours;
     std::vector<int> new_obj_colours(n_objects);
@@ -184,12 +165,13 @@ Generator<StateFeature> WLFmk2Generator::compute_features(const State &state) {
         }
 
         // --- Atom Color Update ---
-        for (const auto &[j, c] : atom_colours) {
-            n = arity[j];
+        for (const auto &[pair, c] : atom_colours) {
+            fact_i = pair.first * n_vals + pair.second;
+            n = connected_objects[fact_i].size();
             atom_neighbours.clear();
             atom_neighbours.reserve(n + 2);
             for (int i = 0; i < n; i++) {
-                obj = connected_objects[ci[j] + i];
+                obj = connected_objects[fact_i][i];
                 atom_neighbours.push_back(obj_colours[obj] * max_arity + i);
                 object_neighbours[obj].push_back(c * max_arity + i);
             }
@@ -201,7 +183,7 @@ Generator<StateFeature> WLFmk2Generator::compute_features(const State &state) {
             hash.try_emplace(atom_neighbours, (int)hash.size());
             col = hash[atom_neighbours];
 
-            new_atom_colours[j] = col;
+            new_atom_colours[pair] = col;
             features.try_emplace(col, 0);
             features[col]++;
         }
@@ -230,27 +212,26 @@ Generator<StateFeature> WLFmk2Generator::compute_features(const State &state) {
     }
 }
 
-class WLFmk2GeneratorFeature
-    : public plugins::TypedFeature<FeatureGenerator, WLFmk2Generator> {
+class WLFRNIFeature : public plugins::TypedFeature<FeatureGenerator, WLFRNI> {
 public:
-    WLFmk2GeneratorFeature() : TypedFeature("wlfgenmk2") {
+    WLFRNIFeature() : TypedFeature("wlfrni") {
         document_title("WL Feature Generator");
 
         add_option<int>("l", "Number of wl iterations", "2");
-        add_feature_generator_options_to_feature(*this, "wlfgenmk2");
+        add_feature_generator_options_to_feature(*this, "wlfrni");
 
         document_language_support("action costs", "ignored by design");
         document_language_support("conditional effects", "ignored by design");
         document_language_support("axioms", "ignored by design");
     }
 
-    virtual std::shared_ptr<WLFmk2Generator> create_component(
+    virtual std::shared_ptr<WLFRNI> create_component(
         const plugins::Options &opts) const override {
-        return plugins::make_shared_from_arg_tuples<WLFmk2Generator>(
+        return plugins::make_shared_from_arg_tuples<WLFRNI>(
             opts.get<std::shared_ptr<AbstractTask>>("transform"),
             opts.get<int>("l"));
     }
 };
 
-static plugins::FeaturePlugin<WLFmk2GeneratorFeature> _plugin;
+static plugins::FeaturePlugin<WLFRNIFeature> _plugin;
 } // features
