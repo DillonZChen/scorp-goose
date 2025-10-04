@@ -175,21 +175,24 @@ Generator<StateFeature> WLFmk2Generator::compute_features(const State &state) {
     std::vector<std::vector<int>> object_neighbours(n_objects);
     std::vector<int> atom_neighbours;
     std::vector<int> new_obj_colours(n_objects);
-    int n, obj;
+    int n, obj, l;
+    int m = atom_colours.size();
 
     for (int iteration = 1; iteration < wl_iterations + 1; iteration++) {
         new_atom_colours.clear();
         for (int i = 0; i < n_objects; i++) {
             object_neighbours[i].clear();
+            object_neighbours[i].reserve(m + 2);
         }
 
         // --- Atom Color Update ---
         for (const auto &[j, c] : atom_colours) {
             n = arity[j];
+            l = ci[j];
             atom_neighbours.clear();
             atom_neighbours.reserve(n + 2);
             for (int i = 0; i < n; i++) {
-                obj = connected_objects[ci[j] + i];
+                obj = connected_objects[l + i];
                 atom_neighbours.push_back(obj_colours[obj] * max_arity + i);
                 object_neighbours[obj].push_back(c * max_arity + i);
             }
