@@ -1152,6 +1152,7 @@ create_fast_downward_library(
         features/dlf_generator
         features/wlf_generator
         features/wlfmk2_generator
+        features/wlfmk3_generator
         features/wlfrni_generator
         features/atom_generator
     DEPENDENCY_ONLY
