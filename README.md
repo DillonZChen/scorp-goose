@@ -143,9 +143,6 @@ https://github.com/jendrikseipp/scorpion/compare/main...scorpion
   [h²-preprocessor](https://ojs.aaai.org/index.php/ICAPS/article/view/13708)
   by Vidal Alcázar and Álvaro Torralba that prunes irrelevant operators.
   Pass `--preprocess` to use it.
-- The `--preprocess=CMD` switch allows you to run arbitrary preprocessing
-  commands that transform the SAS+ output from the translator before
-  passing it to the search.
 - Scorpion uses [incremental search for Cartesian abstraction
   refinement](https://ojs.aaai.org/index.php/ICAPS/article/view/6667).
 - Scorpion uses a
@@ -342,6 +339,7 @@ contributing, and finally by last name.
 - 2008-2016, 2018-2025 Gabriele Roeger
 - 2009, 2025 Christian Muise
 - 2010-2025 Jendrik Seipp
+- 2010-2011, 2013-2025 Silvan Sievers
 - 2012-2025 Florian Pommerening
 - 2013, 2015-2025 Salomé Eriksson
 - 2021-2025 Clemens Büchner
@@ -351,7 +349,6 @@ contributing, and finally by last name.
 - 2024–2025 Tanja Schindler
 - 2024-2025 David Speck
 - 2025 Travis Rivera Petit
-- 2010-2011, 2013-2024 Silvan Sievers
 - 2018-2024 Patrick Ferber
 - 2024 Martín Pozo
 - 2015, 2021-2023 Thomas Keller
